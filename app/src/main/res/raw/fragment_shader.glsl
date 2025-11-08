@@ -5,7 +5,7 @@ in vec3 vColor;
 in vec3 vNormal;
 in vec3 vPosition;
 in vec3 vWorldPosition;
-in float vHeight; // 新增：接收高度信息
+in float vHeight;// 新增：接收高度信息
 flat in int vType;
 
 uniform vec3 uLightPosition;
@@ -34,23 +34,15 @@ const vec3 rock = vec3(0.5, 0.5, 0.5);// 灰色 - 岩石
 const vec3 snow = vec3(0.9, 0.9, 0.9);// 白色 - 雪地
 
 
-
-// 高度颜色参数 - 整体加深
-const float MIN_HEIGHT = -2.0;    // 最低高度
-const float MAX_HEIGHT = 10.0;    // 最高高度
-const vec3 LOW_GROUND_COLOR = vec3(0.7, 0.6, 0.4);   // 低处颜色 - 中等棕色
-const vec3 HIGH_GROUND_COLOR = vec3(0.3, 0.2, 0.1);  // 高处颜色 - 深棕色
-
 vec3 smoothHeightWaterPool(float height) {
-    // 平滑的颜色过渡
-    if (height < -1.5) {
-        return deepWater;
-    } else if (height < -1.0) {
-        float t = (height + 1.5) / 0.5;
-        return mix(deepWater, shallowWater, t);
-    } else if (height < 0.0) {
-        float t = (height + 1.0) / 1.0;
-        return mix(shallowWater, sand, t);
+    if (height <= 0.0) {
+        // 将高度映射到0-1范围
+        float minHeight = -5.0;
+        float maxHeight = 0.0;
+        float normalizedHeight = (height - minHeight) / (maxHeight - minHeight);
+        normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
+        // 使用mix函数在低处和高处颜色之间插值
+        return mix(deepWater, shallowWater, normalizedHeight);
     } else if (height < 2.0) {
         float t = height / 2.0;
         return mix(sand, grass, t);
@@ -68,42 +60,27 @@ vec3 smoothHeightWaterPool(float height) {
     }
 }
 
-// 根据高度获取地面颜色
-vec3 getGroundColorByHeight(float height) {
+vec3 smoothHeightLawn(float height) {
     // 将高度映射到0-1范围
-    float normalizedHeight = (height - MIN_HEIGHT) / (MAX_HEIGHT - MIN_HEIGHT);
+    float minHeight = 0.0;
+    float maxHeight = 5.0;
+    float normalizedHeight = (height - minHeight) / (maxHeight - minHeight);
     normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
 
     // 使用mix函数在低处和高处颜色之间插值
-    return mix(LOW_GROUND_COLOR, HIGH_GROUND_COLOR, normalizedHeight);
+    return mix(grass, forest, normalizedHeight);
 }
 
-// 增强的高度颜色变化（更明显的对比）
-vec3 getEnhancedGroundColor(float height) {
-    float normalizedHeight = (height - MIN_HEIGHT) / (MAX_HEIGHT - MIN_HEIGHT);
+// 根据高度获取地面颜色
+vec3 getLandColorByHeight(float height) {
+    // 将高度映射到0-1范围
+    float minHeight = -2.0;
+    float maxHeight = 10.0;
+    float normalizedHeight = (height - minHeight) / (maxHeight - minHeight);
     normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
 
-    // 使用非线性插值增强对比度
-    float contrast = normalizedHeight * normalizedHeight; // 平方增强对比
-
-    return mix(LOW_GROUND_COLOR, HIGH_GROUND_COLOR, contrast);
-}
-
-// 多色带的高度颜色
-vec3 getMultiBandGroundColor(float height) {
-    float normalizedHeight = (height - MIN_HEIGHT) / (MAX_HEIGHT - MIN_HEIGHT);
-    normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
-
-    if (normalizedHeight < 0.3) {
-        // 低地 - 沙滩色
-        return mix(vec3(0.95, 0.9, 0.7), vec3(0.8, 0.7, 0.5), normalizedHeight / 0.3);
-    } else if (normalizedHeight < 0.6) {
-        // 中地 - 土黄色
-        return mix(vec3(0.8, 0.7, 0.5), vec3(0.6, 0.5, 0.3), (normalizedHeight - 0.3) / 0.3);
-    } else {
-        // 高地 - 深棕色
-        return mix(vec3(0.6, 0.5, 0.3), vec3(0.4, 0.3, 0.2), (normalizedHeight - 0.6) / 0.4);
-    }
+    // 使用mix函数在低处和高处颜色之间插值
+    return mix(vec3(0.7, 0.6, 0.4), vec3(0.3, 0.2, 0.1), normalizedHeight);
 }
 
 // 平滑的高度颜色映射函数
@@ -160,12 +137,11 @@ void main() {
         // 水面增加波动效果
         float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.05;
         diff += wave * 0.1;
-    } else if (vType == Land) {
+    } else if (vType == Land || vType == Building) {
         // 普通地形使用高度颜色映射
-//        baseColor = smoothHeightToColor(vHeight);
-//        baseColor = getMultiBandGroundColor(vHeight); // 可以选择不同的高度颜色函数
-         baseColor = getGroundColorByHeight(vHeight);        // 线性变化
-//         baseColor = getEnhancedGroundColor(vHeight);        // 增强对比
+        baseColor = getLandColorByHeight(vHeight);// 线性变化
+    } else if (vType == Lawn) {
+        baseColor = smoothHeightLawn(vHeight);
     } else {
         baseColor = vColor;
     }
