@@ -228,19 +228,44 @@ public class TerrainData {
     }
 
     private static float[] getColorForType(int type) {
+        Random random = new Random(42);
         switch (type) {
-            case 1: // 道路 - 灰色
-                return new float[]{0.4f, 0.4f, 0.4f};
-            case 2: // 水坑 - 蓝色
-                return new float[]{0.0f, 0.3f, 0.8f};
-            case 3: // 草坪 - 绿色
-                return new float[]{0.2f, 0.6f, 0.2f};
-            case 4: // 建筑物 - 棕色
-                return new float[]{0.6f, 0.4f, 0.2f};
-            default: // 地面 - 土黄色
-                return new float[]{0.7f, 0.6f, 0.4f};
+            case 1: // 道路 - 更真实的灰色，带一些变化
+                float gray = 0.3f + random.nextFloat() * 0.1f;
+                return new float[]{gray, gray, gray};
+
+            case 2: // 水坑 - 更生动的蓝色，带一些深度变化
+                float blueDepth = 0.6f + random.nextFloat() * 0.2f;
+                return new float[]{0.1f, 0.4f, blueDepth};
+
+            case 3: // 草坪 - 更丰富的绿色
+                float greenVar = random.nextFloat() * 0.2f;
+                return new float[]{0.1f + greenVar * 0.2f, 0.5f + greenVar, 0.1f + greenVar * 0.1f};
+
+            case 4: // 建筑物 - 更真实的材质颜色
+                float brownVar = random.nextFloat() * 0.15f;
+                return new float[]{0.5f + brownVar, 0.3f + brownVar, 0.1f + brownVar};
+
+            default: // 地面 - 更自然的土黄色
+                float groundVar = random.nextFloat() * 0.15f;
+                return new float[]{0.7f + groundVar, 0.6f + groundVar, 0.45f + groundVar};
         }
     }
+
+//    private static float[] getColorForType(int type) {
+//        switch (type) {
+//            case 1: // 道路 - 灰色
+//                return new float[]{0.4f, 0.4f, 0.4f};
+//            case 2: // 水坑 - 蓝色
+//                return new float[]{0.0f, 0.3f, 0.8f};
+//            case 3: // 草坪 - 绿色
+//                return new float[]{0.2f, 0.6f, 0.2f};
+//            case 4: // 建筑物 - 棕色
+//                return new float[]{0.6f, 0.4f, 0.2f};
+//            default: // 地面 - 土黄色
+//                return new float[]{0.7f, 0.6f, 0.4f};
+//        }
+//    }
 
     private static void addTrees(List<Vertex> vertices, float[][] heightMap, int[][] typeMap) {
         Random random = new Random(42);
