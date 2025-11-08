@@ -12,6 +12,7 @@ import javax.microedition.khronos.opengles.GL10;
 public class TerrainRenderer implements GLSurfaceView.Renderer {
     private Context context;
     private int program;
+    private int wireframeProgram; // 新增：线框模式着色器程序
     private int positionHandle;
     private int colorHandle;
     private int normalHandle;
@@ -35,10 +36,35 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
     private long startTime;
     private float waterAnimation = 0.0f;
 
+    // 新增：渲染模式控制
+    public enum RenderMode {
+        SOLID,      // 实体模式
+        WIREFRAME   // 线框模式
+    }
+
+    private RenderMode currentMode = RenderMode.SOLID;
+
     public TerrainRenderer(Context context) {
         this.context = context;
         meshData = TerrainData.generateTerrainMesh();
         startTime = System.currentTimeMillis();
+    }
+
+    // 新增：切换渲染模式的方法
+    public void toggleRenderMode() {
+        if (currentMode == RenderMode.SOLID) {
+            currentMode = RenderMode.WIREFRAME;
+        } else {
+            currentMode = RenderMode.SOLID;
+        }
+    }
+
+    public String getCurrentModeName() {
+        return currentMode == RenderMode.SOLID ? "3D实体模式" : "骨架线框模式";
+    }
+
+    public RenderMode getCurrentMode() {
+        return currentMode;
     }
 
     @Override
@@ -62,11 +88,20 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         String fragmentShader = ShaderUtils.loadShader(context, R.raw.fragment_shader);
         program = ShaderUtils.createProgram(vertexShader, fragmentShader);
 
-        if (program == 0) {
+        // 加载线框模式着色器
+        String wireframeVertexShader = ShaderUtils.loadShader(context, R.raw.wireframe_vertex_shader);
+        String wireframeFragmentShader = ShaderUtils.loadShader(context, R.raw.wireframe_fragment_shader);
+        wireframeProgram = ShaderUtils.createProgram(wireframeVertexShader, wireframeFragmentShader);
+
+        if (program == 0 || wireframeProgram == 0) {
             throw new RuntimeException("Failed to create shader program");
         }
 
-        // 获取属性位置
+        // 获取实体模式着色器的属性位置
+        setupSolidShaderAttributes();
+    }
+
+    private void setupSolidShaderAttributes() {
         positionHandle = GLES30.glGetAttribLocation(program, "aPosition");
         colorHandle = GLES30.glGetAttribLocation(program, "aColor");
         normalHandle = GLES30.glGetAttribLocation(program, "aNormal");
@@ -128,7 +163,18 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0);
 
-        // 使用着色器程序
+        // 根据当前模式选择渲染方式
+        if (currentMode == RenderMode.SOLID) {
+            renderSolid();
+        } else {
+            renderWireframe();
+        }
+
+        ShaderUtils.checkGLError("onDrawFrame");
+    }
+
+    private void renderSolid() {
+        // 使用实体模式着色器
         GLES30.glUseProgram(program);
 
         // 传递矩阵和uniform
@@ -160,8 +206,46 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glDisableVertexAttribArray(positionHandle);
         GLES30.glDisableVertexAttribArray(colorHandle);
         GLES30.glDisableVertexAttribArray(normalHandle);
+    }
 
-        // 检查GL错误
-        ShaderUtils.checkGLError("onDrawFrame");
+    private void renderWireframe() {
+        // 使用线框模式着色器
+        GLES30.glUseProgram(wireframeProgram);
+
+        // 获取线框着色器的uniform位置
+        int wireframeMvpMatrixHandle = GLES30.glGetUniformLocation(wireframeProgram, "uMVPMatrix");
+        int wireframeColorHandle = GLES30.glGetUniformLocation(wireframeProgram, "uColor");
+
+        // 获取线框着色器的attribute位置
+        int wireframePositionHandle = GLES30.glGetAttribLocation(wireframeProgram, "aPosition");
+
+        // 传递MVP矩阵
+        GLES30.glUniformMatrix4fv(wireframeMvpMatrixHandle, 1, false, mvpMatrix, 0);
+
+        // 设置线框颜色（亮绿色，便于观察）
+        GLES30.glUniform3f(wireframeColorHandle, 0.0f, 1.0f, 0.0f);
+
+        // 传递顶点数据
+        GLES30.glEnableVertexAttribArray(wireframePositionHandle);
+        GLES30.glVertexAttribPointer(wireframePositionHandle, 3, GLES30.GL_FLOAT, false, 12, meshData.vertices);
+
+        // 首先绘制点（红色）
+        GLES30.glUniform3f(wireframeColorHandle, 1.0f, 0.0f, 0.0f);
+        // 移除：GLES30.glPointSize(6.0f); // 这行不再需要
+        GLES30.glDrawArrays(GLES30.GL_POINTS, 0, meshData.vertexCount);
+
+        // 然后绘制线框（绿色）
+        GLES30.glUniform3f(wireframeColorHandle, 0.0f, 1.0f, 0.0f);
+        GLES30.glLineWidth(2.0f);
+
+        // 注意：GL_LINES 需要特殊的顶点数据，这里我们用三角形来模拟线框
+        // 为了正确显示线框，我们需要修改绘制方式
+        for (int i = 0; i < meshData.vertexCount; i += 3) {
+            // 绘制三角形的三条边
+            GLES30.glDrawArrays(GLES30.GL_LINE_LOOP, i, 3);
+        }
+
+        // 禁用顶点数组
+        GLES30.glDisableVertexAttribArray(wireframePositionHandle);
     }
 }

@@ -19,9 +19,13 @@ public class TerrainGLSurfaceView extends GLSurfaceView {
     }
 
     private void init() {
-        setEGLContextClientVersion(3); // 使用OpenGL ES 3.0
+        setEGLContextClientVersion(3);
         renderer = new TerrainRenderer(getContext());
         setRenderer(renderer);
         setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+    }
+
+    public TerrainRenderer getRenderer() {
+        return renderer;
     }
 }
