@@ -12,6 +12,7 @@ out vec3 vColor;
 out vec3 vNormal;
 out vec3 vPosition;
 out vec3 vWorldPosition; // 世界空间位置
+out float vHeight; // 新增：传递高度信息
 
 void main() {
     vColor = aColor;
@@ -20,6 +21,7 @@ void main() {
 
     // 计算世界空间位置
     vWorldPosition = vec3(uModelMatrix * vec4(aPosition, 1.0));
+    vHeight = aPosition.y; // 传递原始高度信息
 
     gl_Position = uMVPMatrix * vec4(aPosition, 1.0);
 }
