@@ -201,9 +201,9 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glEnableVertexAttribArray(normalHandle);
         GLES30.glVertexAttribPointer(normalHandle, 3, GLES30.GL_FLOAT, false, 12, meshData.normals);
 
-        // 传递类型数据
+        // 传递类型数据 - 使用 GL_INT 类型
         GLES30.glEnableVertexAttribArray(typeHandle);
-        GLES30.glVertexAttribPointer(typeHandle, 1, GLES30.GL_FLOAT, false, 4, meshData.types);
+        GLES30.glVertexAttribIPointer(typeHandle, 1, GLES30.GL_INT, 4, meshData.types); // 注意使用 glVertexAttribIPointer
 
         // 绘制地形
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, meshData.vertexCount);

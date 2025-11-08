@@ -3,6 +3,7 @@ package com.example.gl;
 // TerrainData.java
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -16,9 +17,9 @@ public class TerrainData {
         public float x, y, z;
         public float r, g, b;
         public float nx, ny, nz; // 法线
-        public float type; // 新增：地形类型
+        public int type; // 新增：地形类型
 
-        public Vertex(float x, float y, float z, float r, float g, float b, float type) {
+        public Vertex(float x, float y, float z, float r, float g, float b, int type) {
             this.x = x;
             this.y = y;
             this.z = z;
@@ -33,7 +34,7 @@ public class TerrainData {
         public FloatBuffer vertices;
         public FloatBuffer colors;
         public FloatBuffer normals;
-        public FloatBuffer types; // 新增：类型缓冲区
+        public IntBuffer types; // 新增：类型缓冲区
         public int vertexCount;
     }
 
@@ -429,7 +430,7 @@ public class TerrainData {
         float[] vertexArray = new float[vertices.size() * 3];
         float[] colorArray = new float[vertices.size() * 3];
         float[] normalArray = new float[vertices.size() * 3];
-        float[] typeArray = new float[vertices.size()]; // 新增：类型数组
+        int[] typeArray = new int[vertices.size()]; // 改为 int 数组
 
         for (int i = 0; i < vertices.size(); i++) {
             Vertex v = vertices.get(i);
@@ -451,9 +452,19 @@ public class TerrainData {
         meshData.vertices = createFloatBuffer(vertexArray);
         meshData.colors = createFloatBuffer(colorArray);
         meshData.normals = createFloatBuffer(normalArray);
-        meshData.types = createFloatBuffer(typeArray); // 创建类型缓冲区
+        meshData.types = createIntBuffer(typeArray); // 使用新的创建方法
 
         return meshData;
+    }
+
+    // 新增：创建 IntBuffer 的方法
+    private static IntBuffer createIntBuffer(int[] array) {
+        java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocateDirect(array.length * 4);
+        bb.order(java.nio.ByteOrder.nativeOrder());
+        IntBuffer buffer = bb.asIntBuffer();
+        buffer.put(array);
+        buffer.position(0);
+        return buffer;
     }
 
     private static FloatBuffer createFloatBuffer(float[] array) {
