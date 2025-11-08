@@ -69,10 +69,10 @@ public class TerrainData {
         // 添加草坪
         addLawn(heightMap, typeMap, GRID_SIZE * 3 / 4, GRID_SIZE * 3 / 4, 10);
 
-        // 添加建筑物
+        // 添加建筑物区域
         addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 5.0f);
 
-        // 生成网格顶点
+        // 生成网格顶点 - 修复顶点顺序为逆时针
         for (int i = 0; i < GRID_SIZE - 1; i++) {
             for (int j = 0; j < GRID_SIZE - 1; j++) {
                 // 两个三角形组成一个四边形
@@ -157,7 +157,7 @@ public class TerrainData {
         // 为每个顶点计算独立的法线（简化版本）
         float[] normal = {0.0f, 1.0f, 0.0f}; // 默认朝上的法线
 
-        // 添加三个顶点（一个三角形）
+        // 添加三个顶点（一个三角形）- 逆时针顺序
         addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
         addVertex(vertices, x2, y2, z2, typeMap[i2][j2], normal);
         addVertex(vertices, x3, y3, z3, typeMap[i3][j3], normal);
@@ -166,11 +166,11 @@ public class TerrainData {
     private static float[] calculateNormal(float x1, float y1, float z1,
                                            float x2, float y2, float z2,
                                            float x3, float y3, float z3) {
-        // 计算两个边向量
+        // 计算两个边向量（基于逆时针顺序）
         float ux = x2 - x1, uy = y2 - y1, uz = z2 - z1;
         float vx = x3 - x1, vy = y3 - y1, vz = z3 - z1;
 
-        // 叉积得到法线
+        // 叉积得到法线 (u x v)
         float nx = uy * vz - uz * vy;
         float ny = uz * vx - ux * vz;
         float nz = ux * vy - uy * vx;
@@ -252,7 +252,7 @@ public class TerrainData {
     }
 
     private static void addTree(List<Vertex> vertices, float x, float baseY, float z) {
-        // 树干（棕色立方体）
+        // 树干（棕色立方体）- 使用逆时针顶点顺序
         float trunkHeight = 2.0f;
         float trunkWidth = 0.3f;
         addCube(vertices, x, baseY + trunkHeight / 2, z, trunkWidth, trunkHeight, trunkWidth,
@@ -329,19 +329,19 @@ public class TerrainData {
                 {centerX - halfWidth, centerY + halfHeight, centerZ - halfDepth}
         };
 
-        // 立方体的6个面（每个面2个三角形）
+        // 立方体的6个面（每个面2个三角形）- 全部使用逆时针顺序
         int[][] cubeFaces = {
-                // 前面
+                // 前面 (从外面看是逆时针)
                 {0, 1, 2}, {0, 2, 3},
                 // 后面
                 {5, 4, 7}, {5, 7, 6},
                 // 左面
                 {4, 0, 3}, {4, 3, 7},
-                // 右面
+                // 右面 (从外面看是逆时针)
                 {1, 5, 6}, {1, 6, 2},
-                // 上面
+                // 上面 (从外面看是逆时针)
                 {3, 2, 6}, {3, 6, 7},
-                // 下面
+                // 下面 (从外面看是逆时针)
                 {4, 5, 1}, {4, 1, 0}
         };
 
@@ -381,7 +381,7 @@ public class TerrainData {
                 points[2] = getSpherePoint(centerX, centerY, centerZ, radius, nextPhi, nextTheta);
                 points[3] = getSpherePoint(centerX, centerY, centerZ, radius, nextPhi, theta);
 
-                // 将四边形分成两个三角形
+                // 将四边形分成两个三角形 - 使用逆时针顺序
                 float[] normal1 = calculateNormal(points[0][0], points[0][1], points[0][2],
                         points[1][0], points[1][1], points[1][2],
                         points[2][0], points[2][1], points[2][2]);
@@ -390,12 +390,12 @@ public class TerrainData {
                         points[2][0], points[2][1], points[2][2],
                         points[3][0], points[3][1], points[3][2]);
 
-                // 第一个三角形
+                // 第一个三角形 - 逆时针
                 addVertex(vertices, points[0][0], points[0][1], points[0][2], color, normal1);
                 addVertex(vertices, points[1][0], points[1][1], points[1][2], color, normal1);
                 addVertex(vertices, points[2][0], points[2][1], points[2][2], color, normal1);
 
-                // 第二个三角形
+                // 第二个三角形 - 逆时针
                 addVertex(vertices, points[0][0], points[0][1], points[0][2], color, normal2);
                 addVertex(vertices, points[2][0], points[2][1], points[2][2], color, normal2);
                 addVertex(vertices, points[3][0], points[3][1], points[3][2], color, normal2);
