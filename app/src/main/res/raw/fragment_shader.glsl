@@ -33,6 +33,11 @@ const vec3 forest = vec3(0.1, 0.4, 0.1);// 深绿色 - 森林
 const vec3 rock = vec3(0.5, 0.5, 0.5);// 灰色 - 岩石
 const vec3 snow = vec3(0.9, 0.9, 0.9);// 白色 - 雪地
 
+// 判断是否为特殊区域
+bool isSpecialArea(vec3 color) {
+    return vType == Road || vType == Canopy || vType == Trunk || vType == HouseWall || vType == Roof;
+}
+
 
 vec3 smoothHeightWaterPool(float height) {
     if (height <= 0.0) {
@@ -82,6 +87,14 @@ vec3 getLandColorByHeight(float height) {
 vec3 smoothHeightToColor(float height) {
     // 平滑的颜色过渡
     if (height < -1.5) {
+        return deepWater;
+    } else if (height < -1.0) {
+        float t = (height + 1.5) / 0.5;
+        return mix(deepWater, shallowWater, t);
+    } else if (height < 0.0) {
+        float t = (height + 1.0) / 1.0;
+        return mix(shallowWater, sand, t);
+    } else if (height < 2.0) {
         float t = height / 2.0;
         return mix(sand, grass, t);
     } else if (height < 4.0) {
@@ -119,27 +132,34 @@ void main() {
     float materialShininess = 8.0;
     float materialSpecular = 0.2;
 
+    // 判断是否为特殊区域
+    bool isSpecial = isSpecialArea(vColor);
     vec3 baseColor;
-    if (vType == WaterPool) {
-        // 特殊区域保持原有颜色
-        baseColor = smoothHeightWaterPool(vHeight);
-
-        // 水面的特殊处理
-        materialShininess = 64.0;
-        materialSpecular = 0.6;
-        spec = pow(max(dot(viewDir, reflectDir), 0.0), 128.0);
-
-        // 水面增加波动效果
-        float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.05;
-        diff += wave * 0.1;
-    } else if (vType == Land || vType == Building) {
-        // 普通地形使用高度颜色映射
-        baseColor = getLandColorByHeight(vHeight);// 线性变化
-    } else if (vType == Lawn) {
-        baseColor = smoothHeightLawn(vHeight);
-    } else {
+    if (isSpecial) {
         baseColor = vColor;
+    } else {
+        baseColor = smoothHeightToColor(vHeight);
     }
+//    if (vType == WaterPool) {
+//        // 特殊区域保持原有颜色
+//        baseColor = smoothHeightWaterPool(vHeight);
+//
+//        // 水面的特殊处理
+//        materialShininess = 64.0;
+//        materialSpecular = 0.6;
+//        spec = pow(max(dot(viewDir, reflectDir), 0.0), 128.0);
+//
+//        // 水面增加波动效果
+//        float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.05;
+//        diff += wave * 0.1;
+//    } else if (vType == Land || vType == Building) {
+//        // 普通地形使用高度颜色映射
+//        baseColor = getLandColorByHeight(vHeight);// 线性变化
+//    } else if (vType == Lawn) {
+//        baseColor = smoothHeightLawn(vHeight);
+//    } else {
+//        baseColor = vColor;
+//    }
 
     // 最终光照计算
     vec3 finalColor = baseColor * (ambient + diff) +
