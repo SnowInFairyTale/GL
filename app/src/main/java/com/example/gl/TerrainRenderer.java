@@ -20,6 +20,7 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
     private int modelMatrixHandle;
     private int lightPositionHandle;
     private int cameraPositionHandle; // 新增相机位置uniform
+    private int typeHandle; // 新增：类型属性位置
 
     private TerrainData.MeshData meshData;
 
@@ -109,6 +110,7 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         modelMatrixHandle = GLES30.glGetUniformLocation(program, "uModelMatrix");
         lightPositionHandle = GLES30.glGetUniformLocation(program, "uLightPosition");
         cameraPositionHandle = GLES30.glGetUniformLocation(program, "uCameraPosition");
+        typeHandle = GLES30.glGetAttribLocation(program, "aType"); // 新增
     }
 
     @Override
@@ -199,6 +201,10 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glEnableVertexAttribArray(normalHandle);
         GLES30.glVertexAttribPointer(normalHandle, 3, GLES30.GL_FLOAT, false, 12, meshData.normals);
 
+        // 传递类型数据
+        GLES30.glEnableVertexAttribArray(typeHandle);
+        GLES30.glVertexAttribPointer(typeHandle, 1, GLES30.GL_FLOAT, false, 4, meshData.types);
+
         // 绘制地形
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, meshData.vertexCount);
 
@@ -206,6 +212,7 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glDisableVertexAttribArray(positionHandle);
         GLES30.glDisableVertexAttribArray(colorHandle);
         GLES30.glDisableVertexAttribArray(normalHandle);
+        GLES30.glDisableVertexAttribArray(typeHandle); // 新增
     }
 
     private void renderWireframe() {
