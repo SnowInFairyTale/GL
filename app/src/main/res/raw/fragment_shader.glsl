@@ -6,11 +6,23 @@ in vec3 vNormal;
 in vec3 vPosition;
 in vec3 vWorldPosition;
 in float vHeight; // 新增：接收高度信息
+flat in int vType;
 
 uniform vec3 uLightPosition;
 uniform vec3 uCameraPosition;
 
 out vec4 fragColor;
+
+// 地形类型常量
+const int Road = 1;// 道路
+const int WaterPool = 2;// 水池
+const int Lawn = 3;// 草坪
+const int Canopy = 4;// 树冠
+const int Trunk = 5;// 树杆
+const int Building = 6;// 建筑物
+const int HouseWall = 7;// 屋墙
+const int Roof = 8;// 屋顶
+const int Land = 0;// 土地
 
 // 平滑的高度颜色映射函数
 vec3 smoothHeightToColor(float height) {
@@ -49,23 +61,6 @@ vec3 smoothHeightToColor(float height) {
     }
 }
 
-// 判断是否为特殊区域
-bool isSpecialArea(vec3 color) {
-    // 水面检测：蓝色分量高，红色分量低
-    bool isWater = color.b > 0.5 && color.r < 0.3;
-
-    // 道路检测：接近灰色
-    bool isRoad = length(color - vec3(0.4, 0.4, 0.4)) < 0.2;
-
-    // 建筑物检测：棕色系
-    bool isBuilding = color.r > 0.5 && color.g < 0.4 && color.b < 0.3;
-
-    // 草坪检测：绿色系
-    bool isLawn = color.g > 0.5 && color.r < 0.4 && color.b < 0.4;
-
-    return isWater || isRoad || isBuilding || isLawn;
-}
-
 void main() {
     // 归一化向量
     vec3 normal = normalize(vNormal);
@@ -87,11 +82,8 @@ void main() {
     float materialShininess = 8.0;
     float materialSpecular = 0.2;
 
-    // 判断是否为特殊区域
-    bool isSpecial = isSpecialArea(vColor);
-
     vec3 baseColor;
-    if (isSpecial) {
+    if (vType != Land) {
         // 特殊区域保持原有颜色
         baseColor = vColor;
 
