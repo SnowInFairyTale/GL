@@ -33,6 +33,7 @@ public class TerrainData {
         public FloatBuffer vertices;
         public FloatBuffer colors;
         public FloatBuffer normals;
+        public FloatBuffer types; // 新增：类型缓冲区
         public int vertexCount;
     }
 
@@ -428,6 +429,7 @@ public class TerrainData {
         float[] vertexArray = new float[vertices.size() * 3];
         float[] colorArray = new float[vertices.size() * 3];
         float[] normalArray = new float[vertices.size() * 3];
+        float[] typeArray = new float[vertices.size()]; // 新增：类型数组
 
         for (int i = 0; i < vertices.size(); i++) {
             Vertex v = vertices.get(i);
@@ -442,11 +444,14 @@ public class TerrainData {
             normalArray[i * 3] = v.nx;
             normalArray[i * 3 + 1] = v.ny;
             normalArray[i * 3 + 2] = v.nz;
+
+            typeArray[i] = v.type; // 存储类型
         }
 
         meshData.vertices = createFloatBuffer(vertexArray);
         meshData.colors = createFloatBuffer(colorArray);
         meshData.normals = createFloatBuffer(normalArray);
+        meshData.types = createFloatBuffer(typeArray); // 创建类型缓冲区
 
         return meshData;
     }
