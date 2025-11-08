@@ -6,14 +6,20 @@ layout(location = 2) in vec3 aNormal;
 uniform mat4 uMVPMatrix;
 uniform mat4 uModelMatrix;
 uniform vec3 uLightPosition;
+uniform vec3 uCameraPosition; // 新增相机位置
 
 out vec3 vColor;
 out vec3 vNormal;
 out vec3 vPosition;
+out vec3 vWorldPosition; // 世界空间位置
 
 void main() {
     vColor = aColor;
-    vNormal = mat3(uModelMatrix) * aNormal;
-    vPosition = vec3(uModelMatrix * vec4(aPosition, 1.0));
+    vNormal = aNormal;
+    vPosition = aPosition;
+
+    // 计算世界空间位置
+    vWorldPosition = vec3(uModelMatrix * vec4(aPosition, 1.0));
+
     gl_Position = uMVPMatrix * vec4(aPosition, 1.0);
 }
