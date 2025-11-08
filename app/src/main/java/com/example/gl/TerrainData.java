@@ -120,7 +120,7 @@ public class TerrainData {
                     if (dist <= radius) {
                         float currRange = MathUtils.lineDistance(Math.abs(centerX - i), Math.abs(centerZ - j));
                         float rate = currRange / Math.max(currRange, maxRange);
-                        heightMap[i][j] = minHeight - rate * 1.5f; // 水面高度
+                        heightMap[i][j] = minHeight - (1 - rate) * 1.5f; // 水面高度
                         typeMap[i][j] = ElementType.WaterPool; // 水坑类型
                     }
                 }
