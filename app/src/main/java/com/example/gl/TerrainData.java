@@ -138,6 +138,30 @@ public class TerrainData {
         }
     }
 
+//    private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
+//                                int i1, int j1, int i2, int j2, int i3, int j3) {
+//        float x1 = (i1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+//        float z1 = (j1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+//        float y1 = heightMap[i1][j1];
+//
+//        float x2 = (i2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+//        float z2 = (j2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+//        float y2 = heightMap[i2][j2];
+//
+//        float x3 = (i3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+//        float z3 = (j3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+//        float y3 = heightMap[i3][j3];
+//
+//        // 计算法线
+//        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
+//
+//        // 添加三个顶点（一个三角形）
+//        addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
+//        addVertex(vertices, x2, y2, z2, typeMap[i2][j2], normal);
+//        addVertex(vertices, x3, y3, z3, typeMap[i3][j3], normal);
+//    }
+
+    // 在 addQuad 方法中，修改法线计算
     private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
                                 int i1, int j1, int i2, int j2, int i3, int j3) {
         float x1 = (i1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
@@ -152,8 +176,8 @@ public class TerrainData {
         float z3 = (j3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
         float y3 = heightMap[i3][j3];
 
-        // 计算法线
-        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
+        // 为每个顶点计算独立的法线（简化版本）
+        float[] normal = {0.0f, 1.0f, 0.0f}; // 默认朝上的法线
 
         // 添加三个顶点（一个三角形）
         addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);

@@ -36,15 +36,20 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES30.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
+        GLES30.glClearColor(0.5f, 0.7f, 1.0f, 1.0f); // 天空蓝背景
         GLES30.glEnable(GLES30.GL_DEPTH_TEST);
-        GLES30.glEnable(GLES30.GL_CULL_FACE);
-        GLES30.glCullFace(GLES30.GL_BACK);
+        // 暂时禁用背面剔除，便于调试
+        // GLES30.glEnable(GLES30.GL_CULL_FACE);
+        // GLES30.glCullFace(GLES30.GL_BACK);
 
         // 加载着色器
         String vertexShader = ShaderUtils.loadShader(context, R.raw.vertex_shader);
         String fragmentShader = ShaderUtils.loadShader(context, R.raw.fragment_shader);
         program = ShaderUtils.createProgram(vertexShader, fragmentShader);
+
+        if (program == 0) {
+            throw new RuntimeException("Failed to create shader program");
+        }
 
         // 获取属性位置
         positionHandle = GLES30.glGetAttribLocation(program, "aPosition");
@@ -53,6 +58,12 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         mvpMatrixHandle = GLES30.glGetUniformLocation(program, "uMVPMatrix");
         modelMatrixHandle = GLES30.glGetUniformLocation(program, "uModelMatrix");
         lightPositionHandle = GLES30.glGetUniformLocation(program, "uLightPosition");
+
+        // 检查属性位置
+        if (positionHandle == -1 || colorHandle == -1 || normalHandle == -1 ||
+                mvpMatrixHandle == -1 || modelMatrixHandle == -1) {
+            throw new RuntimeException("Failed to get shader attribute locations");
+        }
     }
 
     @Override
@@ -60,11 +71,12 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glViewport(0, 0, width, height);
 
         float ratio = (float) width / height;
-        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 3, 200);
+        // 调整投影矩阵，让地形在视野内
+        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 5, 200);
 
-        // 设置相机
+        // 设置相机，从更高角度观看
         Matrix.setLookAtM(viewMatrix, 0,
-                0, 30, 60,    // 相机位置
+                0, 40, 80,    // 相机位置 - 更高更远
                 0, 0, 0,      // 观察点
                 0, 1, 0       // 上向量
         );
@@ -74,8 +86,8 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 gl) {
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
 
-        // 更新模型矩阵
-        angle += 0.5f;
+        // 更新模型矩阵（缓慢旋转）
+        angle += 0.2f;
         Matrix.setIdentityM(modelMatrix, 0);
         Matrix.rotateM(modelMatrix, 0, angle, 0, 1, 0);
 
@@ -110,5 +122,8 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glDisableVertexAttribArray(positionHandle);
         GLES30.glDisableVertexAttribArray(colorHandle);
         GLES30.glDisableVertexAttribArray(normalHandle);
+
+        // 检查GL错误
+        ShaderUtils.checkGLError("onDrawFrame");
     }
 }
