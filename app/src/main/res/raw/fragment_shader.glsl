@@ -43,20 +43,15 @@ vec3 smoothHeightWaterPool(float height) {
         normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
         // 使用mix函数在低处和高处颜色之间插值
         return mix(deepWater, shallowWater, normalizedHeight);
-    } else if (height < 2.0) {
-        float t = height / 2.0;
-        return mix(sand, grass, t);
-    } else if (height < 4.0) {
-        float t = (height - 2.0) / 2.0;
-        return mix(grass, forest, t);
-    } else if (height < 7.0) {
-        float t = (height - 4.0) / 3.0;
-        return mix(forest, rock, t);
-    } else if (height < 10.0) {
-        float t = (height - 7.0) / 3.0;
-        return mix(rock, snow, t);
     } else {
-        return snow;
+        // 将高度映射到0-1范围
+        float minHeight = -2.0;
+        float maxHeight = 10.0;
+        float normalizedHeight = (height - minHeight) / (maxHeight - minHeight);
+        normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
+
+        // 使用mix函数在低处和高处颜色之间插值
+        return mix(vec3(0.7, 0.6, 0.4), vec3(0.3, 0.2, 0.1), normalizedHeight);
     }
 }
 
