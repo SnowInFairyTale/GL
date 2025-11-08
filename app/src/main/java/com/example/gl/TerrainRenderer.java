@@ -51,8 +51,11 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         // GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
 
         // 启用背面剔除提高性能
-        GLES30.glEnable(GLES30.GL_CULL_FACE);
-        GLES30.glCullFace(GLES30.GL_BACK);
+//        GLES30.glEnable(GLES30.GL_CULL_FACE);
+//        GLES30.glCullFace(GLES30.GL_BACK);
+
+//        GLES30.glEnable(GLES30.GL_CULL_FACE);
+//        GLES30.glCullFace(GLES30.GL_FRONT); // 剔除正面而不是背面
 
         // 加载着色器
         String vertexShader = ShaderUtils.loadShader(context, R.raw.vertex_shader);
@@ -111,7 +114,7 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         waterAnimation = elapsedTime;
 
         // 更新模型矩阵（缓慢旋转）
-        angle += 0.15f; // 更慢的旋转
+        angle += 0.5f; // 更慢的旋转
         Matrix.setIdentityM(modelMatrix, 0);
         Matrix.rotateM(modelMatrix, 0, angle, 0, 1, 0);
 

@@ -30,27 +30,35 @@ void main() {
 
     // 根据材质类型调整光照
     float materialShininess = 8.0;
-    float materialSpecular = 0.3;
+    float materialSpecular = 0.2;
 
     // 水面的特殊处理
-    if (vColor.b > 0.5 && vColor.r < 0.2) { // 检测蓝色水面
+    if (vColor.b > 0.5 && vColor.r < 0.3) { // 更精确的水面检测
         materialShininess = 64.0;
-        materialSpecular = 0.8;
+        materialSpecular = 0.6;
         spec = pow(max(dot(viewDir, reflectDir), 0.0), 128.0);
+
+        // 水面增加波动效果
+        float wave = sin(vWorldPosition.x * 2.0 + vWorldPosition.z * 2.0) * 0.1;
+        diff += wave * 0.1;
     }
 
     // 最终光照计算
     vec3 finalColor = vColor * (ambient + diff) +
     vec3(1.0) * spec * materialSpecular;
 
-    // 增加一些雾效
+    // 修正雾效：只在远距离应用，且强度降低
     float fogDistance = length(vWorldPosition - uCameraPosition);
-    float fogFactor = 1.0 - exp(-fogDistance * 0.005);
-    vec3 fogColor = vec3(0.5, 0.7, 1.0); // 天空蓝雾色
-    finalColor = mix(finalColor, fogColor, fogFactor * 0.3);
+    float fogFactor = 1.0 - exp(-fogDistance * 0.002); // 降低雾密度
+    vec3 fogColor = vec3(0.5, 0.7, 1.0);
 
-    // 色调增强和饱和度提升
-    vec3 saturatedColor = mix(finalColor, vec3(dot(finalColor, vec3(0.299, 0.587, 0.114))), -0.1);
+    // 只在较远距离应用雾效
+    if (fogDistance > 50.0) {
+        finalColor = mix(finalColor, fogColor, fogFactor * 0.5); // 降低雾强度
+    }
+
+    // 色调增强（适度）
+    vec3 saturatedColor = mix(finalColor, vec3(dot(finalColor, vec3(0.299, 0.587, 0.114))), -0.05);
 
     fragColor = vec4(saturatedColor, 1.0);
 }
