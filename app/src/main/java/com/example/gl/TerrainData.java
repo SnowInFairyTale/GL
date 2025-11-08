@@ -16,14 +16,16 @@ public class TerrainData {
         public float x, y, z;
         public float r, g, b;
         public float nx, ny, nz; // 法线
+        public float type; // 新增：地形类型
 
-        public Vertex(float x, float y, float z, float r, float g, float b) {
+        public Vertex(float x, float y, float z, float r, float g, float b, float type) {
             this.x = x;
             this.y = y;
             this.z = z;
             this.r = r;
             this.g = g;
             this.b = b;
+            this.type = type;
         }
     }
 
@@ -40,6 +42,8 @@ public class TerrainData {
         int[][] typeMap = new int[GRID_SIZE][GRID_SIZE];
 
         Random random = new Random(42);
+        float minHeight = 0;
+        float maxHeight = 0;
 
         // 生成高度图
         for (int i = 0; i < GRID_SIZE; i++) {
@@ -57,20 +61,22 @@ public class TerrainData {
 
                 heightMap[i][j] = height;
                 typeMap[i][j] = 0; // 默认地面
+                minHeight = Math.min(minHeight, height);
+                maxHeight = Math.max(maxHeight, height);
             }
         }
 
         // 添加道路
-        addRoad(heightMap, typeMap, GRID_SIZE / 2, 0, GRID_SIZE, 8);
+        addRoad(heightMap, typeMap, GRID_SIZE / 2, 0, GRID_SIZE, 8, minHeight, maxHeight);
 
         // 添加水坑
-        addWaterPool(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE / 4, 6);
+        addWaterPool(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE / 4, 6, minHeight, maxHeight);
 
         // 添加草坪
-        addLawn(heightMap, typeMap, GRID_SIZE * 3 / 4, GRID_SIZE * 3 / 4, 10);
+        addLawn(heightMap, typeMap, GRID_SIZE * 3 / 4, GRID_SIZE * 3 / 4, 10, minHeight, maxHeight);
 
         // 添加建筑物区域
-        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 5.0f);
+        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 5.0f, minHeight, maxHeight);
 
         // 生成网格顶点 - 修复顶点顺序为逆时针
         for (int i = 0; i < GRID_SIZE - 1; i++) {
@@ -91,50 +97,53 @@ public class TerrainData {
         return createMeshData(vertexList);
     }
 
-    private static void addRoad(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int length, int width) {
+    private static void addRoad(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int length, int width, float minHeight, float maxHeight) {
         int halfWidth = width / 2;
         for (int i = centerX - length / 2; i < centerX + length / 2; i++) {
             for (int j = centerZ - halfWidth; j < centerZ + halfWidth; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
-                    heightMap[i][j] = 0.1f; // 平坦道路
-                    typeMap[i][j] = 1; // 道路类型
+                    heightMap[i][j] = (maxHeight - minHeight) / 2; // 平坦道路
+                    typeMap[i][j] = ElementType.Road; // 道路类型
                 }
             }
         }
     }
 
-    private static void addWaterPool(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int radius) {
+    private static void addWaterPool(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int radius, float minHeight, float maxHeight) {
+        float maxRange = MathUtils.lineDistance(radius, radius);
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
                     float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius) {
-                        heightMap[i][j] = -1.5f; // 水面高度
-                        typeMap[i][j] = 2; // 水坑类型
+                        float currRange = MathUtils.lineDistance(Math.abs(centerX - i), Math.abs(centerZ - j));
+                        float rate = currRange / Math.max(currRange, maxRange);
+                        heightMap[i][j] = minHeight - rate * 1.5f; // 水面高度
+                        typeMap[i][j] = ElementType.WaterPool; // 水坑类型
                     }
                 }
             }
         }
     }
 
-    private static void addLawn(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int radius) {
+    private static void addLawn(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int radius, float minHeight, float maxHeight) {
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
                     float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius && typeMap[i][j] == 0) {
-                        typeMap[i][j] = 3; // 草坪类型
+                        typeMap[i][j] = ElementType.Lawn; // 草坪类型
                     }
                 }
             }
         }
     }
 
-    private static void addBuilding(float[][] heightMap, int[][] typeMap, int startX, int startZ, int width, int depth, float height) {
+    private static void addBuilding(float[][] heightMap, int[][] typeMap, int startX, int startZ, int width, int depth, float height, float minHeight, float maxHeight) {
         for (int i = startX; i < startX + width && i < GRID_SIZE; i++) {
             for (int j = startZ; j < startZ + depth && j < GRID_SIZE; j++) {
                 heightMap[i][j] = height;
-                typeMap[i][j] = 4; // 建筑物类型
+                typeMap[i][j] = ElementType.Building; // 建筑物类型
             }
         }
     }
@@ -188,7 +197,7 @@ public class TerrainData {
 
     private static void addVertex(List<Vertex> vertices, float x, float y, float z, int type, float[] normal) {
         float[] color = getColorForType(type);
-        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2]);
+        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2], type);
         vertex.nx = normal[0];
         vertex.ny = normal[1];
         vertex.nz = normal[2];
@@ -196,8 +205,8 @@ public class TerrainData {
     }
 
     // 重载addVertex方法以接受颜色数组
-    private static void addVertex(List<Vertex> vertices, float x, float y, float z, float[] color, float[] normal) {
-        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2]);
+    private static void addVertex(List<Vertex> vertices, float x, float y, float z, int type, float[] color, float[] normal) {
+        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2], type);
         vertex.nx = normal[0];
         vertex.ny = normal[1];
         vertex.nz = normal[2];
@@ -255,7 +264,7 @@ public class TerrainData {
         // 树干（棕色立方体）- 使用逆时针顶点顺序
         float trunkHeight = 2.0f;
         float trunkWidth = 0.3f;
-        addCube(vertices, x, baseY + trunkHeight / 2, z, trunkWidth, trunkHeight, trunkWidth,
+        addCube(vertices, x, baseY + trunkHeight / 2, z, trunkWidth, trunkHeight, ElementType.Trunk, trunkWidth,
                 new float[]{0.4f, 0.2f, 0.1f});
 
         // 树冠（绿色球体）
@@ -300,17 +309,17 @@ public class TerrainData {
 
         // 建筑物主体
         addCube(vertices, centerX, baseY + height / 2, centerZ,
-                width * TERRAIN_SIZE / GRID_SIZE, height, depth * TERRAIN_SIZE / GRID_SIZE,
+                width * TERRAIN_SIZE / GRID_SIZE, height, ElementType.HouseWall, depth * TERRAIN_SIZE / GRID_SIZE,
                 new float[]{0.6f, 0.4f, 0.2f});
 
         // 屋顶
         addCube(vertices, centerX, baseY + height + 0.5f, centerZ,
-                (width + 0.5f) * TERRAIN_SIZE / GRID_SIZE, 1.0f, (depth + 0.5f) * TERRAIN_SIZE / GRID_SIZE,
+                (width + 0.5f) * TERRAIN_SIZE / GRID_SIZE, 1.0f, ElementType.Roof, (depth + 0.5f) * TERRAIN_SIZE / GRID_SIZE,
                 new float[]{0.3f, 0.2f, 0.1f});
     }
 
     private static void addCube(List<Vertex> vertices, float centerX, float centerY, float centerZ,
-                                float width, float height, float depth, float[] color) {
+                                float width, float height, int type, float depth, float[] color) {
         float halfWidth = width / 2;
         float halfHeight = height / 2;
         float halfDepth = depth / 2;
@@ -355,9 +364,9 @@ public class TerrainData {
                     v2[0], v2[1], v2[2],
                     v3[0], v3[1], v3[2]);
 
-            addVertex(vertices, v1[0], v1[1], v1[2], color, normal);
-            addVertex(vertices, v2[0], v2[1], v2[2], color, normal);
-            addVertex(vertices, v3[0], v3[1], v3[2], color, normal);
+            addVertex(vertices, v1[0], v1[1], v1[2], type, color, normal);
+            addVertex(vertices, v2[0], v2[1], v2[2], type, color, normal);
+            addVertex(vertices, v3[0], v3[1], v3[2], type, color, normal);
         }
     }
 
@@ -391,14 +400,14 @@ public class TerrainData {
                         points[3][0], points[3][1], points[3][2]);
 
                 // 第一个三角形 - 逆时针
-                addVertex(vertices, points[0][0], points[0][1], points[0][2], color, normal1);
-                addVertex(vertices, points[1][0], points[1][1], points[1][2], color, normal1);
-                addVertex(vertices, points[2][0], points[2][1], points[2][2], color, normal1);
+                addVertex(vertices, points[0][0], points[0][1], points[0][2], ElementType.Canopy, color, normal1);
+                addVertex(vertices, points[1][0], points[1][1], points[1][2], ElementType.Canopy, color, normal1);
+                addVertex(vertices, points[2][0], points[2][1], points[2][2], ElementType.Canopy, color, normal1);
 
                 // 第二个三角形 - 逆时针
-                addVertex(vertices, points[0][0], points[0][1], points[0][2], color, normal2);
-                addVertex(vertices, points[2][0], points[2][1], points[2][2], color, normal2);
-                addVertex(vertices, points[3][0], points[3][1], points[3][2], color, normal2);
+                addVertex(vertices, points[0][0], points[0][1], points[0][2], ElementType.Canopy, color, normal2);
+                addVertex(vertices, points[2][0], points[2][1], points[2][2], ElementType.Canopy, color, normal2);
+                addVertex(vertices, points[3][0], points[3][1], points[3][2], ElementType.Canopy, color, normal2);
             }
         }
     }
