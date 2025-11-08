@@ -139,29 +139,6 @@ public class TerrainData {
         }
     }
 
-//    private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
-//                                int i1, int j1, int i2, int j2, int i3, int j3) {
-//        float x1 = (i1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float z1 = (j1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float y1 = heightMap[i1][j1];
-//
-//        float x2 = (i2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float z2 = (j2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float y2 = heightMap[i2][j2];
-//
-//        float x3 = (i3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float z3 = (j3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float y3 = heightMap[i3][j3];
-//
-//        // 计算法线
-//        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
-//
-//        // 添加三个顶点（一个三角形）
-//        addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
-//        addVertex(vertices, x2, y2, z2, typeMap[i2][j2], normal);
-//        addVertex(vertices, x3, y3, z3, typeMap[i3][j3], normal);
-//    }
-
     // 在 addQuad 方法中，修改法线计算
     private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
                                 int i1, int j1, int i2, int j2, int i3, int j3) {
@@ -185,30 +162,6 @@ public class TerrainData {
         addVertex(vertices, x2, y2, z2, typeMap[i2][j2], normal);
         addVertex(vertices, x3, y3, z3, typeMap[i3][j3], normal);
     }
-
-
-//    private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
-//                                int i1, int j1, int i2, int j2, int i3, int j3) {
-//        // 确保所有三角形使用一致的顶点顺序（逆时针）
-//        float x1 = (i1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float z1 = (j1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float y1 = heightMap[i1][j1];
-//
-//        float x2 = (i2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float z2 = (j2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float y2 = heightMap[i2][j2];
-//
-//        float x3 = (i3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float z3 = (j3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-//        float y3 = heightMap[i3][j3];
-//
-//        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
-//
-//        // 确保逆时针顺序
-//        addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
-//        addVertex(vertices, x2, y2, z2, typeMap[i2][j2], normal);
-//        addVertex(vertices, x3, y3, z3, typeMap[i3][j3], normal);
-//    }
 
     private static float[] calculateNormal(float x1, float y1, float z1,
                                            float x2, float y2, float z2,
@@ -275,21 +228,6 @@ public class TerrainData {
                 return new float[]{0.7f + groundVar, 0.6f + groundVar, 0.45f + groundVar};
         }
     }
-
-//    private static float[] getColorForType(int type) {
-//        switch (type) {
-//            case 1: // 道路 - 灰色
-//                return new float[]{0.4f, 0.4f, 0.4f};
-//            case 2: // 水坑 - 蓝色
-//                return new float[]{0.0f, 0.3f, 0.8f};
-//            case 3: // 草坪 - 绿色
-//                return new float[]{0.2f, 0.6f, 0.2f};
-//            case 4: // 建筑物 - 棕色
-//                return new float[]{0.6f, 0.4f, 0.2f};
-//            default: // 地面 - 土黄色
-//                return new float[]{0.7f, 0.6f, 0.4f};
-//        }
-//    }
 
     private static void addTrees(List<Vertex> vertices, float[][] heightMap, int[][] typeMap) {
         Random random = new Random(42);
