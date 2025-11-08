@@ -1,6 +1,7 @@
 package com.example.gl;
 
 // TerrainData.java
+
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +44,11 @@ public class TerrainData {
         // 生成高度图
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                float x = (i / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-                float z = (j / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                float x = (i / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                float z = (j / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
 
                 // 基础地形高度
-                float height = (float)(Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3.0f +
+                float height = (float) (Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3.0f +
                         Math.sin(x * 0.05) * Math.cos(z * 0.03) * 2.0f);
 
                 // 添加随机噪声
@@ -92,7 +93,7 @@ public class TerrainData {
 
     private static void addRoad(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int length, int width) {
         int halfWidth = width / 2;
-        for (int i = centerX - length/2; i < centerX + length/2; i++) {
+        for (int i = centerX - length / 2; i < centerX + length / 2; i++) {
             for (int j = centerZ - halfWidth; j < centerZ + halfWidth; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
                     heightMap[i][j] = 0.1f; // 平坦道路
@@ -106,7 +107,7 @@ public class TerrainData {
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
-                    float dist = (float)Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
+                    float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius) {
                         heightMap[i][j] = -1.5f; // 水面高度
                         typeMap[i][j] = 2; // 水坑类型
@@ -120,7 +121,7 @@ public class TerrainData {
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
-                    float dist = (float)Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
+                    float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius && typeMap[i][j] == 0) {
                         typeMap[i][j] = 3; // 草坪类型
                     }
@@ -164,16 +165,16 @@ public class TerrainData {
     // 在 addQuad 方法中，修改法线计算
     private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
                                 int i1, int j1, int i2, int j2, int i3, int j3) {
-        float x1 = (i1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-        float z1 = (j1 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float x1 = (i1 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float z1 = (j1 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
         float y1 = heightMap[i1][j1];
 
-        float x2 = (i2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-        float z2 = (j2 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float x2 = (i2 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float z2 = (j2 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
         float y2 = heightMap[i2][j2];
 
-        float x3 = (i3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-        float z3 = (j3 / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float x3 = (i3 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float z3 = (j3 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
         float y3 = heightMap[i3][j3];
 
         // 为每个顶点计算独立的法线（简化版本）
@@ -198,7 +199,7 @@ public class TerrainData {
         float nz = ux * vy - uy * vx;
 
         // 归一化
-        float length = (float)Math.sqrt(nx * nx + ny * ny + nz * nz);
+        float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
         if (length > 0) {
             nx /= length;
             ny /= length;
@@ -237,7 +238,7 @@ public class TerrainData {
             case 4: // 建筑物 - 棕色
                 return new float[]{0.6f, 0.4f, 0.2f};
             default: // 地面 - 土黄色
-                return new float[]{0.5f, 0.4f, 0.2f};
+                return new float[]{0.7f, 0.6f, 0.4f};
         }
     }
 
@@ -253,8 +254,8 @@ public class TerrainData {
             if ((typeMap[i][j] == 0 || typeMap[i][j] == 3) &&
                     heightMap[i][j] > -1.0f && heightMap[i][j] < 5.0f) {
 
-                float x = (i / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-                float z = (j / (float)GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                float x = (i / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                float z = (j / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
                 float y = heightMap[i][j];
 
                 // 创建简单的树（树干和树冠）
@@ -267,12 +268,12 @@ public class TerrainData {
         // 树干（棕色立方体）
         float trunkHeight = 2.0f;
         float trunkWidth = 0.3f;
-        addCube(vertices, x, baseY + trunkHeight/2, z, trunkWidth, trunkHeight, trunkWidth,
+        addCube(vertices, x, baseY + trunkHeight / 2, z, trunkWidth, trunkHeight, trunkWidth,
                 new float[]{0.4f, 0.2f, 0.1f});
 
         // 树冠（绿色球体）
         float crownRadius = 1.2f;
-        addSphere(vertices, x, baseY + trunkHeight + crownRadius/2, z, crownRadius,
+        addSphere(vertices, x, baseY + trunkHeight + crownRadius / 2, z, crownRadius,
                 new float[]{0.1f, 0.5f, 0.1f});
     }
 
@@ -306,18 +307,18 @@ public class TerrainData {
     }
 
     private static void addBuildingWithCube(List<Vertex> vertices, int startX, int startZ, int width, int depth, float height) {
-        float centerX = (startX + width/2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE/2;
-        float centerZ = (startZ + depth/2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE/2;
+        float centerX = (startX + width / 2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE / 2;
+        float centerZ = (startZ + depth / 2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE / 2;
         float baseY = 0f; // 假设地面高度为0
 
         // 建筑物主体
-        addCube(vertices, centerX, baseY + height/2, centerZ,
-                width * TERRAIN_SIZE/GRID_SIZE, height, depth * TERRAIN_SIZE/GRID_SIZE,
+        addCube(vertices, centerX, baseY + height / 2, centerZ,
+                width * TERRAIN_SIZE / GRID_SIZE, height, depth * TERRAIN_SIZE / GRID_SIZE,
                 new float[]{0.6f, 0.4f, 0.2f});
 
         // 屋顶
         addCube(vertices, centerX, baseY + height + 0.5f, centerZ,
-                (width + 0.5f) * TERRAIN_SIZE/GRID_SIZE, 1.0f, (depth + 0.5f) * TERRAIN_SIZE/GRID_SIZE,
+                (width + 0.5f) * TERRAIN_SIZE / GRID_SIZE, 1.0f, (depth + 0.5f) * TERRAIN_SIZE / GRID_SIZE,
                 new float[]{0.3f, 0.2f, 0.1f});
     }
 
