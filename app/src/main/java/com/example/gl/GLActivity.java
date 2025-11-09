@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class GLActivity extends AppCompatActivity {
     private GLSurfaceView glSurfaceView;
-    private TerrainRenderer terrainRenderer;
+    private GLRenderer glRenderer;
     private TextView infoText;
 
     // 控制按钮
@@ -43,12 +43,12 @@ public class GLActivity extends AppCompatActivity {
 
     private void setupButtonListeners() {
         toggleViewBtn.setOnClickListener(v -> {
-            terrainRenderer.toggleViewMode();
+            glRenderer.toggleViewMode();
             updateUI();
         });
 
         toggleRenderBtn.setOnClickListener(v -> {
-            terrainRenderer.toggleRenderMode();
+            glRenderer.toggleRenderMode();
             updateUI();
         });
 
@@ -66,10 +66,10 @@ public class GLActivity extends AppCompatActivity {
         button.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    terrainRenderer.setMovement(forward, backward, left, right, up, down);
+                    glRenderer.setMovement(forward, backward, left, right, up, down);
                     break;
                 case MotionEvent.ACTION_UP:
-                    terrainRenderer.setMovement(false, false, false, false, false, false);
+                    glRenderer.setMovement(false, false, false, false, false, false);
                     break;
             }
             return true;
@@ -79,13 +79,13 @@ public class GLActivity extends AppCompatActivity {
     private void setupGLSurfaceView() {
         glSurfaceView = findViewById(R.id.glSurfaceView);
         glSurfaceView.setEGLContextClientVersion(3);
-        terrainRenderer = new TerrainRenderer(this);
-        glSurfaceView.setRenderer(terrainRenderer);
+        glRenderer = new GLRenderer(this);
+        glSurfaceView.setRenderer(glRenderer);
         glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
         // 设置触摸监听
         glSurfaceView.setOnTouchListener((v, event) -> {
-            terrainRenderer.onTouchEvent(event);
+            glRenderer.onTouchEvent(event);
             glSurfaceView.requestRender(); // 请求重绘
             return true;
         });
@@ -93,8 +93,8 @@ public class GLActivity extends AppCompatActivity {
 
     private void updateUI() {
         runOnUiThread(() -> {
-            String info = "模式: " + terrainRenderer.getCurrentViewMode() + " | " +
-                    terrainRenderer.getCurrentModeName();
+            String info = "模式: " + glRenderer.getCurrentViewMode() + " | " +
+                    glRenderer.getCurrentModeName();
             infoText.setText(info);
         });
     }
