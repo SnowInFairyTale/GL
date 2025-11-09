@@ -31,9 +31,10 @@ const int Land = 0;// 土地
 const vec3 deepWater = vec3(0.0, 0.2, 0.6);// 深蓝色 - 深水
 const vec3 shallowWater = vec3(0.0, 0.4, 0.8);// 浅蓝色 - 浅水
 //const vec3 sand = vec3(0.9, 0.8, 0.5);// 沙色 - 沙滩
-const vec3 sand = vec3(0.3, 0.2, 0.1);// 沙色 - 沙滩
-const vec3 grass = vec3(0.2, 0.6, 0.2);// 绿色 - 草地
 const vec3 forest = vec3(0.1, 0.4, 0.1);// 深绿色 - 森林
+const vec3 grass = vec3(0.2, 0.6, 0.2);// 绿色 - 草地
+const vec3 sand = vec3(0.7, 0.6, 0.4);// 沙色 - 沙滩
+const vec3 land = vec3(0.3, 0.2, 0.1);// 土色 - 土地
 const vec3 rock = vec3(0.5, 0.5, 0.5);// 灰色 - 岩石
 const vec3 snow = vec3(0.9, 0.9, 0.9);// 白色 - 雪地
 
@@ -110,16 +111,23 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         return mix(shallowWater, sand, t);
     }
     // 陆地过渡（minHeight以上）
-    else if (height < minHeight + totalRange * 0.2) {
-        // 沙滩到草地过渡
+    else if (height < minHeight + totalRange * 0.15) {
+        // 沙滩到土地过渡
         float rangeStart = minHeight;
-        float rangeEnd = minHeight + totalRange * 0.2;
+        float rangeEnd = minHeight + totalRange * 0.15;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
-        return mix(sand, grass, t);
+        return mix(sand, land, t);
+    } else if (height < minHeight + totalRange * 0.3) {
+        // 土地到草地过渡
+        float rangeStart = minHeight + totalRange * 0.15;
+        float rangeEnd = minHeight + totalRange * 0.3;
+        float t = (height - rangeStart) / (rangeEnd - rangeStart);
+        t = clamp(t, 0.0, 1.0);
+        return mix(land, grass, t);
     } else if (height < minHeight + totalRange * 0.5) {
         // 草地到森林过渡
-        float rangeStart = minHeight + totalRange * 0.2;
+        float rangeStart = minHeight + totalRange * 0.3;
         float rangeEnd = minHeight + totalRange * 0.5;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
@@ -168,16 +176,7 @@ void main() {
     // 判断是否为特殊区域
     bool isSpecial = isSpecialArea(vColor);
     vec3 baseColor;
-    if (vType == WaterPool) {
-        // 水面的特殊处理
-        materialShininess = 64.0;
-        materialSpecular = 0.6;
-        spec = pow(max(dot(viewDir, reflectDir), 0.0), 128.0);
-
-        // 水面增加波动效果
-        float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.05;
-        diff += wave * 0.1;
-    } else if (isSpecial) {
+    if (isSpecial) {
         baseColor = vColor;
     } else {
         baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
