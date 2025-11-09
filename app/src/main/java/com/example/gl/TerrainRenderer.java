@@ -21,6 +21,8 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
     private int lightPositionHandle;
     private int cameraPositionHandle; // 新增相机位置uniform
     private int typeHandle; // 新增：类型属性位置
+    private int minHeightHandle; // 新增：minHeight
+    private int maxHeightHandle; // 新增：maxHeight
 
     private TerrainData.MeshData meshData;
 
@@ -111,6 +113,8 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         lightPositionHandle = GLES30.glGetUniformLocation(program, "uLightPosition");
         cameraPositionHandle = GLES30.glGetUniformLocation(program, "uCameraPosition");
         typeHandle = GLES30.glGetAttribLocation(program, "aType"); // 新增
+        minHeightHandle = GLES30.glGetUniformLocation(program, "minHeight"); // 新增
+        maxHeightHandle = GLES30.glGetUniformLocation(program, "maxHeight"); // 新增
     }
 
     @Override
@@ -184,6 +188,8 @@ public class TerrainRenderer implements GLSurfaceView.Renderer {
         GLES30.glUniformMatrix4fv(modelMatrixHandle, 1, false, modelMatrix, 0);
         GLES30.glUniform3f(lightPositionHandle, lightPosition[0], lightPosition[1], lightPosition[2]);
         GLES30.glUniform3f(cameraPositionHandle, cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+        GLES30.glUniform1f(minHeightHandle, meshData.minHeight);
+        GLES30.glUniform1f(maxHeightHandle, meshData.maxHeight);
 
         // 传递时间动画uniform（如果需要）
         // int timeHandle = GLES30.glGetUniformLocation(program, "uTime");

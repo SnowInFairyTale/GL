@@ -64,7 +64,7 @@ public class TerrainData {
                 height = Math.max(-2.0f, Math.min(MAX_HEIGHT, height));
 
                 heightMap[i][j] = height;
-                typeMap[i][j] = 0; // 默认地面
+                typeMap[i][j] = ElementType.Land; // 默认地面
                 minHeight = Math.min(minHeight, height);
                 maxHeight = Math.max(maxHeight, height);
             }
@@ -81,6 +81,13 @@ public class TerrainData {
 
         // 添加建筑物区域
         addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 10.0f, minHeight, maxHeight);
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                float height = heightMap[i][j];
+                maxHeight = Math.max(maxHeight, height);
+            }
+        }
 
         // 生成网格顶点 - 修复顶点顺序为逆时针
         for (int i = 0; i < GRID_SIZE - 1; i++) {
