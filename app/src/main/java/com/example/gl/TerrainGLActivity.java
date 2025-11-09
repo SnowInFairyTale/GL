@@ -9,7 +9,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+public class TerrainGLActivity extends Activity {
     private TerrainGLSurfaceView glSurfaceView;
     private Button toggleButton;
     private TextView modeTextView;
