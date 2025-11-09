@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 信息显示 -->
+    <TextView
+        android:id="@+id/infoText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:background="#80000000"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:text="模式: 上帝视角 | 3D实体模式" />
+
+    <!-- 控制按钮 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <Button
+            android:id="@+id/toggleViewBtn"
+            android:layout_width="120dp"
+            android:layout_height="40dp"
+            android:text="切换视角"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/toggleRenderBtn"
+            android:layout_width="120dp"
+            android:layout_height="40dp"
+            android:text="切换渲染"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- 移动控制按钮（第一人称时显示） -->
+    <LinearLayout
+        android:id="@+id/movementControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- 前后移动 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/forwardBtn"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="前"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- 左右移动和上下 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/leftBtn"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="左"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/upBtn"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="上"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/downBtn"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="下"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/rightBtn"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="右"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- 后退 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/backwardBtn"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="后"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

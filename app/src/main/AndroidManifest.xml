@@ -21,6 +21,9 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".CombineActivity"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".GLActivity"
             android:screenOrientation="portrait" />
         <activity
