@@ -47,8 +47,8 @@ public class GLRenderer implements GLSurfaceView.Renderer {
     private float mouseSensitivity = 0.5f; // 触摸灵敏度
 
     // 控制状态
-    private boolean isFirstPersonView = false;
-    private boolean isAutoRotating = true; // 默认自动旋转
+    private boolean isFirstPersonView = true;
+    private boolean isAutoRotating = false; // 默认自动旋转
 
     // 触摸控制
     private float previousX, previousY;
