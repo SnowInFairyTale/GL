@@ -8,44 +8,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- 信息显示 -->
-    <TextView
-        android:id="@+id/infoText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:background="#80000000"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:padding="8dp"
-        android:text="模式: 上帝视角 | 3D实体模式" />
-
-    <!-- 控制按钮 -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:orientation="vertical"
-        android:padding="8dp">
-
-        <Button
-            android:id="@+id/toggleViewBtn"
-            android:layout_width="120dp"
-            android:layout_height="40dp"
-            android:text="切换视角"
-            android:textSize="12sp" />
-
-        <Button
-            android:id="@+id/toggleRenderBtn"
-            android:layout_width="120dp"
-            android:layout_height="40dp"
-            android:text="切换渲染"
-            android:textSize="12sp" />
-
-    </LinearLayout>
-
     <!-- 移动控制按钮（第一人称时显示） -->
     <LinearLayout
         android:id="@+id/movementControls"
