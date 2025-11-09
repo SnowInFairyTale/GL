@@ -12,6 +12,7 @@ public class GLActivity extends AppCompatActivity {
     private GLRenderer glRenderer;
 
     // 控制按钮
+    private Button toggleRenderBtn;
     private Button forwardBtn, backwardBtn, leftBtn, rightBtn, upBtn, downBtn;
 
     @Override
@@ -24,6 +25,8 @@ public class GLActivity extends AppCompatActivity {
     }
 
     private void setupUI() {
+        toggleRenderBtn = findViewById(R.id.toggleRenderBtn);
+
         forwardBtn = findViewById(R.id.forwardBtn);
         backwardBtn = findViewById(R.id.backwardBtn);
         leftBtn = findViewById(R.id.leftBtn);
@@ -35,6 +38,8 @@ public class GLActivity extends AppCompatActivity {
     }
 
     private void setupButtonListeners() {
+        toggleRenderBtn.setOnClickListener(v -> glRenderer.toggleRenderMode());
+
         // 移动控制（按下和松开）
         setMovementButton(forwardBtn, true, false, false, false, false, false);
         setMovementButton(backwardBtn, false, true, false, false, false, false);
