@@ -2,7 +2,7 @@ package com.example.gl;
 
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.view.View;
+import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -20,7 +20,7 @@ public class GLActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_gl);
 
         setupUI();
         setupGLSurfaceView();
@@ -63,19 +63,16 @@ public class GLActivity extends AppCompatActivity {
 
     private void setMovementButton(Button button, boolean forward, boolean backward,
                                    boolean left, boolean right, boolean up, boolean down) {
-        button.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        terrainRenderer.setMovement(forward, backward, left, right, up, down);
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        terrainRenderer.setMovement(false, false, false, false, false, false);
-                        break;
-                }
-                return true;
+        button.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    terrainRenderer.setMovement(forward, backward, left, right, up, down);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    terrainRenderer.setMovement(false, false, false, false, false, false);
+                    break;
             }
+            return true;
         });
     }
 
@@ -87,13 +84,10 @@ public class GLActivity extends AppCompatActivity {
         glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
         // 设置触摸监听
-        glSurfaceView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                terrainRenderer.onTouchEvent(event);
-                glSurfaceView.requestRender(); // 请求重绘
-                return true;
-            }
+        glSurfaceView.setOnTouchListener((v, event) -> {
+            terrainRenderer.onTouchEvent(event);
+            glSurfaceView.requestRender(); // 请求重绘
+            return true;
         });
     }
 
