@@ -10,6 +10,8 @@ flat in int vType;
 in vec2 vTexCoord;
 
 uniform sampler2D uTexture;
+uniform int uUseTexture;
+
 uniform float minHeight;  // 第一个float值
 uniform float maxHeight;  // 第二个float值
 
@@ -41,7 +43,11 @@ const vec3 snow = vec3(0.9, 0.9, 0.9);// 白色 - 雪地
 
 // 判断是否为特殊区域
 bool isSpecialArea(vec3 color) {
-    return vType == Road || vType == Canopy || vType == Trunk;
+    bool isFixColor = vType == Road || vType == Canopy || vType == Trunk;
+    if (uUseTexture == 1) {
+        return isFixColor;
+    }
+    return isFixColor || vType == HouseWall || vType == Roof;
 }
 
 

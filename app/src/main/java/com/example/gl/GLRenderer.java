@@ -27,7 +27,7 @@ public class GLRenderer implements GLSurfaceView.Renderer {
 
     private int texCoordHandle;
     private int textureHandle;
-//    private int useTextureHandle;
+    private int useTextureHandle;
     private int wallTextureId;
     private int roofTextureId;
 
@@ -309,12 +309,12 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         // 新增：纹理相关属性
         texCoordHandle = GLES30.glGetAttribLocation(program, "aTexCoord");
         textureHandle = GLES30.glGetUniformLocation(program, "uTexture");
-//        useTextureHandle = GLES30.glGetUniformLocation(program, "uUseTexture");
+        useTextureHandle = GLES30.glGetUniformLocation(program, "uUseTexture");
 
         // 检查是否获取成功
         if (texCoordHandle == -1) Log.w("GLRenderer", "aTexCoord attribute not found");
         if (textureHandle == -1) Log.w("GLRenderer", "uTexture uniform not found");
-//        if (useTextureHandle == -1) Log.w("GLRenderer", "uUseTexture uniform not found");
+        if (useTextureHandle == -1) Log.w("GLRenderer", "uUseTexture uniform not found");
     }
 
     @Override
@@ -438,9 +438,9 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         // GLES30.glUniform1f(timeHandle, waterAnimation);
 
         // 启用纹理
-//        if (useTextureHandle != -1) {
-//            GLES30.glUniform1i(useTextureHandle, 1);
-//        }
+        if (useTextureHandle != -1) {
+            GLES30.glUniform1i(useTextureHandle, 1);
+        }
 
         // 绑定墙体纹理到纹理单元0
         if (textureHandle != -1 && wallTextureId != 0) {
