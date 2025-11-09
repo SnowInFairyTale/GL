@@ -30,8 +30,7 @@ const int Land = 0;// 土地
 // 定义颜色关键点
 const vec3 deepWater = vec3(0.0, 0.2, 0.6);// 深蓝色 - 深水
 const vec3 shallowWater = vec3(0.0, 0.4, 0.8);// 浅蓝色 - 浅水
-//const vec3 sand = vec3(0.9, 0.8, 0.5);// 沙色 - 沙滩
-const vec3 forest = vec3(0.1, 0.4, 0.1);// 深绿色 - 森林
+const vec3 forest = vec3(0.1, 0.4, 0.1);// 深绿色 - 深草滩
 const vec3 grass = vec3(0.2, 0.6, 0.2);// 绿色 - 草地
 const vec3 sand = vec3(0.7, 0.6, 0.4);// 沙色 - 沙滩
 const vec3 land = vec3(0.3, 0.2, 0.1);// 土色 - 土地
@@ -104,7 +103,7 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         t = clamp(t, 0.0, 1.0);
         return mix(deepWater, shallowWater, t);
     } else if (height < minHeight) {
-        // 浅水到沙滩过渡
+        // 浅水到深草滩过渡
         float rangeStart = minHeight - 0.5;
         float t = (height - rangeStart) / 0.5;
         t = clamp(t, 0.0, 1.0);
@@ -112,28 +111,28 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
     }
     // 陆地过渡（minHeight以上）
     else if (height < minHeight + totalRange * 0.15) {
-        // 沙滩到土地过渡
+        // 深草滩到浅草滩过渡
         float rangeStart = minHeight;
         float rangeEnd = minHeight + totalRange * 0.15;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
         return mix(forest, grass, t);
     } else if (height < minHeight + totalRange * 0.3) {
-        // 土地到草地过渡
+        // 浅草滩到沙滩过渡
         float rangeStart = minHeight + totalRange * 0.15;
         float rangeEnd = minHeight + totalRange * 0.3;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
         return mix(grass, sand, t);
     } else if (height < minHeight + totalRange * 0.5) {
-        // 草地到森林过渡
+        // 沙滩到土地过渡
         float rangeStart = minHeight + totalRange * 0.3;
         float rangeEnd = minHeight + totalRange * 0.5;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
         return mix(sand, land, t);
     } else if (height < minHeight + totalRange * 0.8) {
-        // 森林到岩石过渡
+        // 土地到岩石过渡
         float rangeStart = minHeight + totalRange * 0.5;
         float rangeEnd = minHeight + totalRange * 0.8;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
