@@ -3,6 +3,7 @@ package com.example.gl;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -12,6 +13,7 @@ public class CombineActivity extends AppCompatActivity {
     private GLSurfaceView glSurfaceView;
     private GLRenderer glRenderer;
     private TextView infoText;
+    private View movementControls;
 
     // 控制按钮
     private Button toggleViewBtn, toggleRenderBtn;
@@ -38,6 +40,8 @@ public class CombineActivity extends AppCompatActivity {
         rightBtn = findViewById(R.id.rightBtn);
         upBtn = findViewById(R.id.upBtn);
         downBtn = findViewById(R.id.downBtn);
+
+        movementControls = findViewById(R.id.movementControls);
 
         setupButtonListeners();
     }
@@ -98,6 +102,7 @@ public class CombineActivity extends AppCompatActivity {
                     glRenderer.getCurrentModeName();
             infoText.setText(info);
         });
+        movementControls.setVisibility(glRenderer.isFirstPersonView() ? View.VISIBLE : View.GONE);
     }
 
     @Override

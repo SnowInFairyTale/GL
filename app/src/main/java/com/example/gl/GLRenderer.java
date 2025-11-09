@@ -107,6 +107,10 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         return isFirstPersonView ? "第一人称漫游" : "上帝视角";
     }
 
+    protected boolean isFirstPersonView() {
+        return isFirstPersonView;
+    }
+
     public void toggleRenderMode() {
         if (currentMode == RenderMode.SOLID) {
             currentMode = RenderMode.WIREFRAME;
