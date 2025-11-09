@@ -36,6 +36,8 @@ public class TerrainData {
         public FloatBuffer normals;
         public IntBuffer types; // 新增：类型缓冲区
         public int vertexCount;
+        public float minHeight;
+        public float maxHeight;
     }
 
     public static MeshData generateTerrainMesh() {
@@ -78,7 +80,7 @@ public class TerrainData {
         addLawn(heightMap, typeMap, GRID_SIZE * 3 / 4, GRID_SIZE * 3 / 4, 10, minHeight, maxHeight);
 
         // 添加建筑物区域
-        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 5.0f, minHeight, maxHeight);
+        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 10.0f, minHeight, maxHeight);
 
         // 生成网格顶点 - 修复顶点顺序为逆时针
         for (int i = 0; i < GRID_SIZE - 1; i++) {
@@ -96,7 +98,7 @@ public class TerrainData {
         addDetailedBuildings(vertexList, heightMap, typeMap);
 
         // 转换为FloatBuffer
-        return createMeshData(vertexList);
+        return createMeshData(vertexList, minHeight, maxHeight);
     }
 
     private static void addRoad(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int length, int width, float minHeight, float maxHeight) {
@@ -422,7 +424,7 @@ public class TerrainData {
         return new float[]{x, y, z};
     }
 
-    private static MeshData createMeshData(List<Vertex> vertices) {
+    private static MeshData createMeshData(List<Vertex> vertices, float minHeight, float maxHeight) {
         MeshData meshData = new MeshData();
         meshData.vertexCount = vertices.size();
 
@@ -452,6 +454,8 @@ public class TerrainData {
         meshData.vertices = createFloatBuffer(vertexArray);
         meshData.colors = createFloatBuffer(colorArray);
         meshData.normals = createFloatBuffer(normalArray);
+        meshData.minHeight = minHeight;
+        meshData.maxHeight = maxHeight;
         meshData.types = createIntBuffer(typeArray); // 使用新的创建方法
 
         return meshData;
