@@ -182,7 +182,10 @@ public class TerrainData {
         float y3 = heightMap[i3][j3];
 
         // 计算法线
-        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
+//        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
+
+        // 为每个顶点计算独立的法线（简化版本）
+        float[] normal = {0.0f, 1.0f, 0.0f}; // 默认朝上的法线
 
         // 添加三个顶点（一个三角形）- 逆时针顺序
         addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
