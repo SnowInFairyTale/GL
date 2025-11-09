@@ -288,7 +288,8 @@ public class GLRenderer implements GLSurfaceView.Renderer {
 
         float ratio = (float) width / height;
         // 使用透视投影，更真实的3D效果
-        Matrix.perspectiveM(projectionMatrix, 0, 45.0f, ratio, 0.1f, 300.0f); // 修改近平面为0.1
+//        Matrix.perspectiveM(projectionMatrix, 0, 45.0f, ratio, 0.1f, 300.0f); // 修改近平面为0.1
+        Matrix.perspectiveM(projectionMatrix, 0, 45.0f, ratio, 1.0f, 300.0f);
     }
 
     private void updateCamera() {
