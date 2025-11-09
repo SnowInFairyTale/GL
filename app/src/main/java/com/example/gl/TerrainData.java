@@ -15,9 +15,14 @@ public class TerrainData {
         public float x, y, z;
         public float r, g, b;
         public float nx, ny, nz; // 法线
-        public int type; // 新增：地形类型
+        public int type; // 地形类型
+        public float u, v; // 纹理坐标
 
         public Vertex(float x, float y, float z, float r, float g, float b, int type) {
+            this(x, y, z, r, g, b, type, 0, 0);
+        }
+
+        public Vertex(float x, float y, float z, float r, float g, float b, int type, float u, float v) {
             this.x = x;
             this.y = y;
             this.z = z;
@@ -25,6 +30,8 @@ public class TerrainData {
             this.g = g;
             this.b = b;
             this.type = type;
+            this.u = u;
+            this.v = v;
         }
     }
 
@@ -32,7 +39,8 @@ public class TerrainData {
         public FloatBuffer vertices;
         public FloatBuffer colors;
         public FloatBuffer normals;
-        public IntBuffer types; // 新增：类型缓冲区
+        public FloatBuffer texCoords; // 纹理坐标缓冲区
+        public IntBuffer types;
         public int vertexCount;
         public float minHeight;
         public float maxHeight;
@@ -119,13 +127,13 @@ public class TerrainData {
     }
 
     private static void addWaterPool(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int radius, float minHeight, float maxHeight) {
-        float maxRange = MathUtils.lineDistance(radius, radius);
+        float maxRange = lineDistance(radius, radius);
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
                     float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius) {
-                        float currRange = MathUtils.lineDistance(Math.abs(centerX - i), Math.abs(centerZ - j));
+                        float currRange = lineDistance(Math.abs(centerX - i), Math.abs(centerZ - j));
                         float rate = currRange / Math.max(currRange, maxRange);
                         heightMap[i][j] = minHeight - (1 - rate) * 1.5f; // 水面高度
                         typeMap[i][j] = ElementType.WaterPool; // 水坑类型
@@ -140,7 +148,7 @@ public class TerrainData {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
                 if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
                     float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
-                    if (dist <= radius && typeMap[i][j] == 0) {
+                    if (dist <= radius && typeMap[i][j] == ElementType.Land) {
                         typeMap[i][j] = ElementType.Lawn; // 草坪类型
                     }
                 }
@@ -173,8 +181,8 @@ public class TerrainData {
         float z3 = (j3 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
         float y3 = heightMap[i3][j3];
 
-        // 为每个顶点计算独立的法线（简化版本）
-        float[] normal = {0.0f, 1.0f, 0.0f}; // 默认朝上的法线
+        // 计算法线
+        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
 
         // 添加三个顶点（一个三角形）- 逆时针顺序
         addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
@@ -223,6 +231,16 @@ public class TerrainData {
         vertices.add(vertex);
     }
 
+    // 新增：带纹理坐标的顶点添加方法
+    private static void addVertexWithTexCoord(List<Vertex> vertices, float x, float y, float z,
+                                              int type, float[] color, float[] normal, float u, float v) {
+        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2], type, u, v);
+        vertex.nx = normal[0];
+        vertex.ny = normal[1];
+        vertex.nz = normal[2];
+        vertices.add(vertex);
+    }
+
     private static float[] getColorForType(int type) {
         Random random = new Random(42);
         switch (type) {
@@ -230,17 +248,28 @@ public class TerrainData {
                 float gray = 0.25f + random.nextFloat() * 0.1f;
                 return new float[]{gray, gray, gray};
 
-            case 2: // 水坑 - 更生动的蓝色，带一些深度变化
+            case ElementType.WaterPool: // 水坑 - 更生动的蓝色，带一些深度变化
                 float blueDepth = 0.6f + random.nextFloat() * 0.2f;
                 return new float[]{0.1f, 0.4f, blueDepth};
 
-            case 3: // 草坪 - 更丰富的绿色
+            case ElementType.Lawn: // 草坪 - 更丰富的绿色
                 float greenVar = random.nextFloat() * 0.2f;
                 return new float[]{0.1f + greenVar * 0.2f, 0.5f + greenVar, 0.1f + greenVar * 0.1f};
 
-            case 4: // 建筑物 - 更真实的材质颜色
+            case ElementType.Building: // 建筑物 - 更真实的材质颜色
+            case ElementType.HouseWall:
                 float brownVar = random.nextFloat() * 0.15f;
                 return new float[]{0.5f + brownVar, 0.3f + brownVar, 0.1f + brownVar};
+
+            case ElementType.Roof: // 屋顶 - 深棕色
+                float roofVar = random.nextFloat() * 0.15f;
+                return new float[]{0.3f + roofVar, 0.2f + roofVar, 0.1f + roofVar};
+
+            case ElementType.Trunk: // 树干 - 棕色
+                return new float[]{0.4f, 0.2f, 0.1f};
+
+            case ElementType.Canopy: // 树冠 - 绿色
+                return new float[]{0.1f, 0.5f, 0.1f};
 
             default: // 地面 - 更自然的土黄色
                 float groundVar = random.nextFloat() * 0.15f;
@@ -257,7 +286,7 @@ public class TerrainData {
             int j = random.nextInt(GRID_SIZE - 4) + 2;
 
             // 确保在草坪或普通地面上，且不在道路、水坑或建筑物上
-            if ((typeMap[i][j] == 0 || typeMap[i][j] == 3) &&
+            if ((typeMap[i][j] == ElementType.Land || typeMap[i][j] == ElementType.Lawn) &&
                     heightMap[i][j] > -1.0f && heightMap[i][j] < 5.0f) {
 
                 float x = (i / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
@@ -298,7 +327,7 @@ public class TerrainData {
             boolean validLocation = true;
             for (int i = startX; i < startX + width && i < GRID_SIZE; i++) {
                 for (int j = startZ; j < startZ + depth && j < GRID_SIZE; j++) {
-                    if (typeMap[i][j] == 1 || typeMap[i][j] == 2) {
+                    if (typeMap[i][j] == ElementType.Road || typeMap[i][j] == ElementType.WaterPool) {
                         validLocation = false;
                         break;
                     }
@@ -317,12 +346,12 @@ public class TerrainData {
         float centerZ = (startZ + depth / 2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE / 2;
         float baseY = 0f; // 假设地面高度为0
 
-        // 建筑物主体
+        // 建筑物主体 - 使用墙体纹理类型
         addCube(vertices, centerX, baseY + height / 2, centerZ,
                 width * TERRAIN_SIZE / GRID_SIZE, height, ElementType.HouseWall, depth * TERRAIN_SIZE / GRID_SIZE,
                 new float[]{0.6f, 0.4f, 0.2f});
 
-        // 屋顶
+        // 屋顶 - 使用屋顶纹理类型
         addCube(vertices, centerX, baseY + height + 0.5f, centerZ,
                 (width + 0.5f) * TERRAIN_SIZE / GRID_SIZE, 1.0f, ElementType.Roof, (depth + 0.5f) * TERRAIN_SIZE / GRID_SIZE,
                 new float[]{0.3f, 0.2f, 0.1f});
@@ -348,35 +377,46 @@ public class TerrainData {
                 {centerX - halfWidth, centerY + halfHeight, centerZ - halfDepth}
         };
 
-        // 立方体的6个面（每个面2个三角形）- 全部使用逆时针顺序
-        int[][] cubeFaces = {
-                // 前面 (从外面看是逆时针)
-                {0, 1, 2}, {0, 2, 3},
+        // 定义每个面的三角形和对应的纹理坐标
+        Object[][] faceData = {
+                // 前面 - 两个三角形和纹理坐标
+                {new int[]{0, 1, 2, 0, 2, 3}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
                 // 后面
-                {5, 4, 7}, {5, 7, 6},
+                {new int[]{5, 4, 7, 5, 7, 6}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
                 // 左面
-                {4, 0, 3}, {4, 3, 7},
-                // 右面 (从外面看是逆时针)
-                {1, 5, 6}, {1, 6, 2},
-                // 上面 (从外面看是逆时针)
-                {3, 2, 6}, {3, 6, 7},
-                // 下面 (从外面看是逆时针)
-                {4, 5, 1}, {4, 1, 0}
+                {new int[]{4, 0, 3, 4, 3, 7}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 右面
+                {new int[]{1, 5, 6, 1, 6, 2}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 上面
+                {new int[]{3, 2, 6, 3, 6, 7}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 下面
+                {new int[]{4, 5, 1, 4, 1, 0}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}}
         };
 
-        // 为每个面计算法线并添加顶点
-        for (int[] face : cubeFaces) {
-            float[] v1 = cubeVertices[face[0]];
-            float[] v2 = cubeVertices[face[1]];
-            float[] v3 = cubeVertices[face[2]];
+        for (int faceIndex = 0; faceIndex < faceData.length; faceIndex++) {
+            int[] triangleIndices = (int[]) faceData[faceIndex][0];
+            float[] texCoords = (float[]) faceData[faceIndex][1];
 
-            float[] normal = calculateNormal(v1[0], v1[1], v1[2],
-                    v2[0], v2[1], v2[2],
-                    v3[0], v3[1], v3[2]);
+            // 计算当前面的法线
+            int v1Idx = triangleIndices[0];
+            int v2Idx = triangleIndices[1];
+            int v3Idx = triangleIndices[2];
+            float[] normal = calculateNormal(
+                    cubeVertices[v1Idx][0], cubeVertices[v1Idx][1], cubeVertices[v1Idx][2],
+                    cubeVertices[v2Idx][0], cubeVertices[v2Idx][1], cubeVertices[v2Idx][2],
+                    cubeVertices[v3Idx][0], cubeVertices[v3Idx][1], cubeVertices[v3Idx][2]
+            );
 
-            addVertex(vertices, v1[0], v1[1], v1[2], type, color, normal);
-            addVertex(vertices, v2[0], v2[1], v2[2], type, color, normal);
-            addVertex(vertices, v3[0], v3[1], v3[2], type, color, normal);
+            // 添加6个顶点（2个三角形）
+            for (int i = 0; i < 6; i++) {
+                int vertexIndex = triangleIndices[i];
+                float[] vertex = cubeVertices[vertexIndex];
+                float u = texCoords[i * 2];
+                float v = texCoords[i * 2 + 1];
+
+                addVertexWithTexCoord(vertices, vertex[0], vertex[1], vertex[2],
+                        type, color, normal, u, v);
+            }
         }
     }
 
@@ -438,7 +478,8 @@ public class TerrainData {
         float[] vertexArray = new float[vertices.size() * 3];
         float[] colorArray = new float[vertices.size() * 3];
         float[] normalArray = new float[vertices.size() * 3];
-        int[] typeArray = new int[vertices.size()]; // 改为 int 数组
+        float[] texCoordArray = new float[vertices.size() * 2]; // 纹理坐标数组
+        int[] typeArray = new int[vertices.size()];
 
         for (int i = 0; i < vertices.size(); i++) {
             Vertex v = vertices.get(i);
@@ -454,33 +495,43 @@ public class TerrainData {
             normalArray[i * 3 + 1] = v.ny;
             normalArray[i * 3 + 2] = v.nz;
 
-            typeArray[i] = v.type; // 存储类型
+            texCoordArray[i * 2] = v.u;     // 纹理U坐标
+            texCoordArray[i * 2 + 1] = v.v; // 纹理V坐标
+
+            typeArray[i] = v.type;
         }
 
         meshData.vertices = createFloatBuffer(vertexArray);
         meshData.colors = createFloatBuffer(colorArray);
         meshData.normals = createFloatBuffer(normalArray);
+        meshData.texCoords = createFloatBuffer(texCoordArray); // 创建纹理坐标缓冲区
         meshData.minHeight = minHeight;
         meshData.maxHeight = maxHeight;
-        meshData.types = createIntBuffer(typeArray); // 使用新的创建方法
+        meshData.types = createIntBuffer(typeArray);
 
         return meshData;
     }
 
-    // 新增：创建 IntBuffer 的方法
-    private static IntBuffer createIntBuffer(int[] array) {
+    // 工具方法：计算直线距离
+    private static float lineDistance(float dx, float dy) {
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // 创建 FloatBuffer
+    private static FloatBuffer createFloatBuffer(float[] array) {
         java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocateDirect(array.length * 4);
         bb.order(java.nio.ByteOrder.nativeOrder());
-        IntBuffer buffer = bb.asIntBuffer();
+        FloatBuffer buffer = bb.asFloatBuffer();
         buffer.put(array);
         buffer.position(0);
         return buffer;
     }
 
-    private static FloatBuffer createFloatBuffer(float[] array) {
+    // 创建 IntBuffer
+    private static IntBuffer createIntBuffer(int[] array) {
         java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocateDirect(array.length * 4);
         bb.order(java.nio.ByteOrder.nativeOrder());
-        FloatBuffer buffer = bb.asFloatBuffer();
+        IntBuffer buffer = bb.asIntBuffer();
         buffer.put(array);
         buffer.position(0);
         return buffer;

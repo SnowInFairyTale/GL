@@ -7,7 +7,9 @@ in vec3 vPosition;
 in vec3 vWorldPosition;
 in float vHeight;// 新增：接收高度信息
 flat in int vType;
+in vec2 vTexCoord;
 
+uniform sampler2D uTexture;
 uniform float minHeight;  // 第一个float值
 uniform float maxHeight;  // 第二个float值
 
@@ -39,7 +41,7 @@ const vec3 snow = vec3(0.9, 0.9, 0.9);// 白色 - 雪地
 
 // 判断是否为特殊区域
 bool isSpecialArea(vec3 color) {
-    return vType == Road || vType == Canopy || vType == Trunk || vType == HouseWall || vType == Roof;
+    return vType == Road || vType == Canopy || vType == Trunk;
 }
 
 
@@ -177,6 +179,10 @@ void main() {
     vec3 baseColor;
     if (isSpecial) {
         baseColor = vColor;
+    } else if (vType == HouseWall || vType == Roof) {
+        // 对建筑物使用纹理
+        vec4 texColor = texture(uTexture, vTexCoord);
+        baseColor = texColor.rgb;
     } else {
         baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
     }

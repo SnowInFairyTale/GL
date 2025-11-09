@@ -4,6 +4,7 @@ import android.content.Context;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -24,6 +25,12 @@ public class GLRenderer implements GLSurfaceView.Renderer {
     private int minHeightHandle;
     private int maxHeightHandle;
 
+    private int texCoordHandle;
+    private int textureHandle;
+//    private int useTextureHandle;
+    private int wallTextureId;
+    private int roofTextureId;
+
     private TerrainData.MeshData meshData;
 
     private float[] modelMatrix = new float[16];
@@ -39,7 +46,7 @@ public class GLRenderer implements GLSurfaceView.Renderer {
     private long startTime;
     private float waterAnimation = 0.0f;
 
-    // 新增：第一人称漫游控制
+    // 第一人称漫游控制
     private float[] fpvPosition = {0.0f, 5.0f, 0.0f}; // 第一人称位置
     private float fpvYaw = 0.0f;   // 偏航角（左右旋转）
     private float fpvPitch = 0.0f; // 俯仰角（上下看）
@@ -80,15 +87,15 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         fpvPosition[2] = 0.0f;
     }
 
-    // 新增：获取地形高度（用于碰撞检测）
+    // 获取地形高度（用于碰撞检测）
     private float getTerrainHeight(float worldX, float worldZ) {
         // 简化版本：返回基础高度
-        // 在实际项目中，你应该查询高度图
+        // 在实际项目中，应该查询高度图
         return (float) (Math.sin(worldX * 0.1) * Math.cos(worldZ * 0.1) * 3.0f +
                 Math.sin(worldX * 0.05) * Math.cos(worldZ * 0.03) * 2.0f);
     }
 
-    // 新增：切换视角模式
+    // 切换视角模式
     public void toggleViewMode() {
         isFirstPersonView = !isFirstPersonView;
         isAutoRotating = !isFirstPersonView; // 第一人称时停止自动旋转
@@ -114,7 +121,7 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         return currentMode;
     }
 
-    // 新增：触摸控制方法
+    // 触摸控制方法
     public void onTouchEvent(MotionEvent event) {
         if (!isFirstPersonView) {
             // 上帝视角的旋转控制
@@ -182,7 +189,7 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    // 新增：移动控制方法
+    // 移动控制方法
     public void setMovement(boolean forward, boolean backward, boolean left, boolean right, boolean up, boolean down) {
         this.moveForward = forward;
         this.moveBackward = backward;
@@ -192,7 +199,7 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         this.moveDown = down;
     }
 
-    // 新增：更新第一人称位置
+    // 更新第一人称位置
     private void updateFirstPersonPosition(float deltaTime) {
         if (!isFirstPersonView) return;
 
@@ -247,11 +254,11 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         // GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
 
         // 启用背面剔除提高性能
-//        GLES30.glEnable(GLES30.GL_CULL_FACE);
-//        GLES30.glCullFace(GLES30.GL_BACK);
+        // GLES30.glEnable(GLES30.GL_CULL_FACE);
+        // GLES30.glCullFace(GLES30.GL_BACK);
 
-//        GLES30.glEnable(GLES30.GL_CULL_FACE);
-//        GLES30.glCullFace(GLES30.GL_FRONT); // 剔除正面而不是背面
+        // GLES30.glEnable(GLES30.GL_CULL_FACE);
+        // GLES30.glCullFace(GLES30.GL_FRONT); // 剔除正面而不是背面
 
         // 加载着色器
         String vertexShader = ShaderUtils.loadShader(context, R.raw.vertex_shader);
@@ -266,7 +273,25 @@ public class GLRenderer implements GLSurfaceView.Renderer {
             throw new RuntimeException("Failed to create shader program");
         }
 
+        // 加载纹理
+        loadTextures();
+
         setupSolidShaderAttributes();
+    }
+
+    // 加载纹理
+    private void loadTextures() {
+        // 加载墙体纹理
+        wallTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
+        // 加载屋顶纹理
+        roofTextureId = GLTools.loadTexture(context, R.drawable.roof_texture);
+
+        // 如果纹理加载失败，使用默认颜色
+        if (wallTextureId == 0 || roofTextureId == 0) {
+            Log.e("GLRenderer", "Failed to load textures, using default colors");
+        } else {
+            Log.i("GLRenderer", "Textures loaded successfully");
+        }
     }
 
     private void setupSolidShaderAttributes() {
@@ -280,6 +305,16 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         typeHandle = GLES30.glGetAttribLocation(program, "aType");
         minHeightHandle = GLES30.glGetUniformLocation(program, "minHeight");
         maxHeightHandle = GLES30.glGetUniformLocation(program, "maxHeight");
+
+        // 新增：纹理相关属性
+        texCoordHandle = GLES30.glGetAttribLocation(program, "aTexCoord");
+        textureHandle = GLES30.glGetUniformLocation(program, "uTexture");
+//        useTextureHandle = GLES30.glGetUniformLocation(program, "uUseTexture");
+
+        // 检查是否获取成功
+        if (texCoordHandle == -1) Log.w("GLRenderer", "aTexCoord attribute not found");
+        if (textureHandle == -1) Log.w("GLRenderer", "uTexture uniform not found");
+//        if (useTextureHandle == -1) Log.w("GLRenderer", "uUseTexture uniform not found");
     }
 
     @Override
@@ -390,6 +425,7 @@ public class GLRenderer implements GLSurfaceView.Renderer {
     private void renderSolid() {
         GLES30.glUseProgram(program);
 
+        // 设置uniforms
         GLES30.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0);
         GLES30.glUniformMatrix4fv(modelMatrixHandle, 1, false, modelMatrix, 0);
         GLES30.glUniform3f(lightPositionHandle, lightPosition[0], lightPosition[1], lightPosition[2]);
@@ -401,6 +437,18 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         // int timeHandle = GLES30.glGetUniformLocation(program, "uTime");
         // GLES30.glUniform1f(timeHandle, waterAnimation);
 
+        // 启用纹理
+//        if (useTextureHandle != -1) {
+//            GLES30.glUniform1i(useTextureHandle, 1);
+//        }
+
+        // 绑定墙体纹理到纹理单元0
+        if (textureHandle != -1 && wallTextureId != 0) {
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, wallTextureId);
+            GLES30.glUniform1i(textureHandle, 0);
+        }
+
         // 传递顶点数据
         GLES30.glEnableVertexAttribArray(positionHandle);
         GLES30.glVertexAttribPointer(positionHandle, 3, GLES30.GL_FLOAT, false, 12, meshData.vertices);
@@ -411,14 +459,24 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         GLES30.glEnableVertexAttribArray(normalHandle);
         GLES30.glVertexAttribPointer(normalHandle, 3, GLES30.GL_FLOAT, false, 12, meshData.normals);
 
+        // 传递纹理坐标
+        if (texCoordHandle != -1 && meshData.texCoords != null) {
+            GLES30.glEnableVertexAttribArray(texCoordHandle);
+            GLES30.glVertexAttribPointer(texCoordHandle, 2, GLES30.GL_FLOAT, false, 8, meshData.texCoords);
+        }
+
         GLES30.glEnableVertexAttribArray(typeHandle);
         GLES30.glVertexAttribIPointer(typeHandle, 1, GLES30.GL_INT, 4, meshData.types);
 
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, meshData.vertexCount);
 
+        // 禁用顶点数组
         GLES30.glDisableVertexAttribArray(positionHandle);
         GLES30.glDisableVertexAttribArray(colorHandle);
         GLES30.glDisableVertexAttribArray(normalHandle);
+        if (texCoordHandle != -1) {
+            GLES30.glDisableVertexAttribArray(texCoordHandle);
+        }
         GLES30.glDisableVertexAttribArray(typeHandle);
     }
 
