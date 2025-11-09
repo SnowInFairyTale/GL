@@ -8,6 +8,9 @@ in vec3 vWorldPosition;
 in float vHeight;// 新增：接收高度信息
 flat in int vType;
 
+uniform float minHeight;  // 第一个float值
+uniform float maxHeight;  // 第二个float值
+
 uniform vec3 uLightPosition;
 uniform vec3 uCameraPosition;
 
@@ -27,7 +30,8 @@ const int Land = 0;// 土地
 // 定义颜色关键点
 const vec3 deepWater = vec3(0.0, 0.2, 0.6);// 深蓝色 - 深水
 const vec3 shallowWater = vec3(0.0, 0.4, 0.8);// 浅蓝色 - 浅水
-const vec3 sand = vec3(0.9, 0.8, 0.5);// 沙色 - 沙滩
+//const vec3 sand = vec3(0.9, 0.8, 0.5);// 沙色 - 沙滩
+const vec3 sand = vec3(0.3, 0.2, 0.1);// 沙色 - 沙滩
 const vec3 grass = vec3(0.2, 0.6, 0.2);// 绿色 - 草地
 const vec3 forest = vec3(0.1, 0.4, 0.1);// 深绿色 - 森林
 const vec3 rock = vec3(0.5, 0.5, 0.5);// 灰色 - 岩石
@@ -84,29 +88,58 @@ vec3 getLandColorByHeight(float height) {
 }
 
 // 平滑的高度颜色映射函数
-vec3 smoothHeightToColor(float height) {
-    // 平滑的颜色过渡
-    if (height < -1.5) {
+vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
+    // 基于动态minHeight和maxHeight的平滑颜色过渡
+    float totalRange = maxHeight - minHeight;
+
+    // 水域过渡（minHeight以下）
+    if (height < minHeight - 1.0) {
+        // 深水区域
         return deepWater;
-    } else if (height < -1.0) {
-        float t = (height + 1.5) / 0.5;
+    } else if (height < minHeight - 0.5) {
+        // 深水到浅水过渡
+        float rangeStart = minHeight - 1.0;
+        float t = (height - rangeStart) / 0.5;
+        t = clamp(t, 0.0, 1.0);
         return mix(deepWater, shallowWater, t);
-    } else if (height < 0.0) {
-        float t = (height + 1.0) / 1.0;
+    } else if (height < minHeight) {
+        // 浅水到沙滩过渡
+        float rangeStart = minHeight - 0.5;
+        float t = (height - rangeStart) / 0.5;
+        t = clamp(t, 0.0, 1.0);
         return mix(shallowWater, sand, t);
-    } else if (height < 2.0) {
-        float t = height / 2.0;
+    }
+    // 陆地过渡（minHeight以上）
+    else if (height < minHeight + totalRange * 0.2) {
+        // 沙滩到草地过渡
+        float rangeStart = minHeight;
+        float rangeEnd = minHeight + totalRange * 0.2;
+        float t = (height - rangeStart) / (rangeEnd - rangeStart);
+        t = clamp(t, 0.0, 1.0);
         return mix(sand, grass, t);
-    } else if (height < 4.0) {
-        float t = (height - 2.0) / 2.0;
+    } else if (height < minHeight + totalRange * 0.5) {
+        // 草地到森林过渡
+        float rangeStart = minHeight + totalRange * 0.2;
+        float rangeEnd = minHeight + totalRange * 0.5;
+        float t = (height - rangeStart) / (rangeEnd - rangeStart);
+        t = clamp(t, 0.0, 1.0);
         return mix(grass, forest, t);
-    } else if (height < 7.0) {
-        float t = (height - 4.0) / 3.0;
+    } else if (height < minHeight + totalRange * 0.8) {
+        // 森林到岩石过渡
+        float rangeStart = minHeight + totalRange * 0.5;
+        float rangeEnd = minHeight + totalRange * 0.8;
+        float t = (height - rangeStart) / (rangeEnd - rangeStart);
+        t = clamp(t, 0.0, 1.0);
         return mix(forest, rock, t);
-    } else if (height < 10.0) {
-        float t = (height - 7.0) / 3.0;
+    } else if (height < maxHeight) {
+        // 岩石到雪地过渡
+        float rangeStart = minHeight + totalRange * 0.8;
+        float rangeEnd = maxHeight;
+        float t = (height - rangeStart) / (rangeEnd - rangeStart);
+        t = clamp(t, 0.0, 1.0);
         return mix(rock, snow, t);
     } else {
+        // 最高区域
         return snow;
     }
 }
@@ -135,10 +168,19 @@ void main() {
     // 判断是否为特殊区域
     bool isSpecial = isSpecialArea(vColor);
     vec3 baseColor;
-    if (isSpecial) {
+    if (vType == WaterPool) {
+        // 水面的特殊处理
+        materialShininess = 64.0;
+        materialSpecular = 0.6;
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), 128.0);
+
+        // 水面增加波动效果
+        float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.05;
+        diff += wave * 0.1;
+    } else if (isSpecial) {
         baseColor = vColor;
     } else {
-        baseColor = smoothHeightToColor(vHeight);
+        baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
     }
 //    if (vType == WaterPool) {
 //        // 特殊区域保持原有颜色
