@@ -108,7 +108,7 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         float rangeStart = minHeight - 0.5;
         float t = (height - rangeStart) / 0.5;
         t = clamp(t, 0.0, 1.0);
-        return mix(shallowWater, sand, t);
+        return mix(shallowWater, forest, t);
     }
     // 陆地过渡（minHeight以上）
     else if (height < minHeight + totalRange * 0.15) {
@@ -117,28 +117,28 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         float rangeEnd = minHeight + totalRange * 0.15;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
-        return mix(sand, land, t);
+        return mix(forest, grass, t);
     } else if (height < minHeight + totalRange * 0.3) {
         // 土地到草地过渡
         float rangeStart = minHeight + totalRange * 0.15;
         float rangeEnd = minHeight + totalRange * 0.3;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
-        return mix(land, grass, t);
+        return mix(grass, sand, t);
     } else if (height < minHeight + totalRange * 0.5) {
         // 草地到森林过渡
         float rangeStart = minHeight + totalRange * 0.3;
         float rangeEnd = minHeight + totalRange * 0.5;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
-        return mix(grass, forest, t);
+        return mix(sand, land, t);
     } else if (height < minHeight + totalRange * 0.8) {
         // 森林到岩石过渡
         float rangeStart = minHeight + totalRange * 0.5;
         float rangeEnd = minHeight + totalRange * 0.8;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
-        return mix(forest, rock, t);
+        return mix(land, rock, t);
     } else if (height < maxHeight) {
         // 岩石到雪地过渡
         float rangeStart = minHeight + totalRange * 0.8;
