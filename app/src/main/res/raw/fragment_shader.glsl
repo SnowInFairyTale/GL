@@ -9,8 +9,9 @@ in float vHeight;// 新增：接收高度信息
 flat in int vType;
 in vec2 vTexCoord;
 
-uniform sampler2D uTexture;
+uniform sampler2D uWallTexture;
 uniform int uUseTexture;
+uniform sampler2D uRoofTexture;
 
 uniform float minHeight;  // 第一个float值
 uniform float maxHeight;  // 第二个float值
@@ -185,9 +186,13 @@ void main() {
     vec3 baseColor;
     if (isSpecial) {
         baseColor = vColor;
-    } else if (vType == HouseWall || vType == Roof) {
+    } else if (vType == HouseWall) {
         // 对建筑物使用纹理
-        vec4 texColor = texture(uTexture, vTexCoord);
+        vec4 texColor = texture(uWallTexture, vTexCoord);
+        baseColor = texColor.rgb;
+    } else if (vType == Roof) {
+        // 屋顶使用屋顶纹理
+        vec4 texColor = texture(uRoofTexture, vTexCoord);
         baseColor = texColor.rgb;
     } else {
         baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);

@@ -25,8 +25,10 @@ public class GLRenderer implements GLSurfaceView.Renderer {
     private int minHeightHandle;
     private int maxHeightHandle;
 
+    // 纹理相关变量
     private int texCoordHandle;
-    private int textureHandle;
+    private int wallTextureHandle;
+    private int roofTextureHandle;
     private int useTextureHandle;
     private int wallTextureId;
     private int roofTextureId;
@@ -306,14 +308,16 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         minHeightHandle = GLES30.glGetUniformLocation(program, "minHeight");
         maxHeightHandle = GLES30.glGetUniformLocation(program, "maxHeight");
 
-        // 新增：纹理相关属性
+        // 纹理相关属性
         texCoordHandle = GLES30.glGetAttribLocation(program, "aTexCoord");
-        textureHandle = GLES30.glGetUniformLocation(program, "uTexture");
+        wallTextureHandle = GLES30.glGetUniformLocation(program, "uWallTexture");
+        roofTextureHandle = GLES30.glGetUniformLocation(program, "uRoofTexture");
         useTextureHandle = GLES30.glGetUniformLocation(program, "uUseTexture");
 
         // 检查是否获取成功
         if (texCoordHandle == -1) Log.w("GLRenderer", "aTexCoord attribute not found");
-        if (textureHandle == -1) Log.w("GLRenderer", "uTexture uniform not found");
+        if (wallTextureHandle == -1) Log.w("GLRenderer", "uWallTexture uniform not found");
+        if (roofTextureHandle == -1) Log.w("GLRenderer", "uRoofTexture uniform not found");
         if (useTextureHandle == -1) Log.w("GLRenderer", "uUseTexture uniform not found");
     }
 
@@ -443,10 +447,17 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         }
 
         // 绑定墙体纹理到纹理单元0
-        if (textureHandle != -1 && wallTextureId != 0) {
+        if (wallTextureHandle != -1 && wallTextureId != 0) {
             GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, wallTextureId);
-            GLES30.glUniform1i(textureHandle, 0);
+            GLES30.glUniform1i(wallTextureHandle, 0);
+        }
+
+        // 绑定屋顶纹理到纹理单元1
+        if (roofTextureHandle != -1 && roofTextureId != 0) {
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, roofTextureId);
+            GLES30.glUniform1i(roofTextureHandle, 1);
         }
 
         // 传递顶点数据
