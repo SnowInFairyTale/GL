@@ -20,7 +20,7 @@ public class CombineActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gl);
+        setContentView(R.layout.activity_combine);
 
         setupUI();
         setupGLSurfaceView();

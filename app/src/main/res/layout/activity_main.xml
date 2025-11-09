@@ -20,5 +20,12 @@
         android:layout_marginTop="20dp"
         android:text="自由视角" />
 
+    <Button
+        android:id="@+id/combine_bt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Combine" />
+
 
 </LinearLayout>
