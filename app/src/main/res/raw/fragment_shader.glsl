@@ -30,7 +30,7 @@ const int Land = 0;// 土地
 // 定义颜色关键点
 const vec3 deepWater = vec3(0.0, 0.2, 0.6);// 深蓝色 - 深水
 const vec3 shallowWater = vec3(0.0, 0.4, 0.8);// 浅蓝色 - 浅水
-const vec3 forest = vec3(0.1, 0.4, 0.1);// 深绿色 - 深草滩
+const vec3 deepGrass = vec3(0.1, 0.4, 0.1);// 深绿色 - 深草滩
 const vec3 grass = vec3(0.2, 0.6, 0.2);// 绿色 - 草地
 const vec3 sand = vec3(0.7, 0.6, 0.4);// 沙色 - 沙滩
 const vec3 land = vec3(0.3, 0.2, 0.1);// 土色 - 土地
@@ -72,7 +72,7 @@ vec3 smoothHeightLawn(float height) {
     normalizedHeight = clamp(normalizedHeight, 0.0, 1.0);
 
     // 使用mix函数在低处和高处颜色之间插值
-    return mix(grass, forest, normalizedHeight);
+    return mix(grass, deepGrass, normalizedHeight);
 }
 
 // 根据高度获取地面颜色
@@ -107,7 +107,7 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         float rangeStart = minHeight - 0.5;
         float t = (height - rangeStart) / 0.5;
         t = clamp(t, 0.0, 1.0);
-        return mix(shallowWater, forest, t);
+        return mix(shallowWater, deepGrass, t);
     }
     // 陆地过渡（minHeight以上）
     else if (height < minHeight + totalRange * 0.15) {
@@ -116,7 +116,7 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         float rangeEnd = minHeight + totalRange * 0.15;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
-        return mix(forest, grass, t);
+        return mix(deepGrass, grass, t);
     } else if (height < minHeight + totalRange * 0.3) {
         // 浅草滩到沙滩过渡
         float rangeStart = minHeight + totalRange * 0.15;
