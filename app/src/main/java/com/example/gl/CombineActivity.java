@@ -24,6 +24,7 @@ public class CombineActivity extends AppCompatActivity {
 
         setupUI();
         setupGLSurfaceView();
+        updateUI();
     }
 
     private void setupUI() {
