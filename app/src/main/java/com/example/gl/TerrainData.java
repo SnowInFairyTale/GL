@@ -228,8 +228,8 @@ public class TerrainData {
     private static float[] getColorForType(int type) {
         Random random = new Random(42);
         switch (type) {
-            case 1: // 道路 - 更真实的灰色，带一些变化
-                float gray = 0.3f + random.nextFloat() * 0.1f;
+            case ElementType.Road: // 道路 - 更真实的灰色，带一些变化
+                float gray = 0.25f + random.nextFloat() * 0.1f;
                 return new float[]{gray, gray, gray};
 
             case 2: // 水坑 - 更生动的蓝色，带一些深度变化
