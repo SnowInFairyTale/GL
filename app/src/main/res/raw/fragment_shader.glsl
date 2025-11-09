@@ -124,23 +124,23 @@ vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
         return mix(grass, sand, t);
-    } else if (height < minHeight + totalRange * 0.5) {
+    } else if (height < minHeight + totalRange * 0.45) {
         // 沙滩到土地过渡
         float rangeStart = minHeight + totalRange * 0.3;
-        float rangeEnd = minHeight + totalRange * 0.5;
+        float rangeEnd = minHeight + totalRange * 0.45;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
         return mix(sand, land, t);
-    } else if (height < minHeight + totalRange * 0.8) {
+    } else if (height < minHeight + totalRange * 0.6) {
         // 土地到岩石过渡
-        float rangeStart = minHeight + totalRange * 0.5;
-        float rangeEnd = minHeight + totalRange * 0.8;
+        float rangeStart = minHeight + totalRange * 0.45;
+        float rangeEnd = minHeight + totalRange * 0.6;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);
         return mix(land, rock, t);
     } else if (height < maxHeight) {
         // 岩石到雪地过渡
-        float rangeStart = minHeight + totalRange * 0.8;
+        float rangeStart = minHeight + totalRange * 0.75;
         float rangeEnd = maxHeight;
         float t = (height - rangeStart) / (rangeEnd - rangeStart);
         t = clamp(t, 0.0, 1.0);

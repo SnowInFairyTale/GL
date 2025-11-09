@@ -80,7 +80,7 @@ public class TerrainData {
         addLawn(heightMap, typeMap, GRID_SIZE * 3 / 4, GRID_SIZE * 3 / 4, 10, minHeight, maxHeight);
 
         // 添加建筑物区域
-        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 4, 4, 10.0f, minHeight, maxHeight);
+        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 6, 6, 10.0f, minHeight, maxHeight);
 
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
@@ -153,7 +153,8 @@ public class TerrainData {
     private static void addBuilding(float[][] heightMap, int[][] typeMap, int startX, int startZ, int width, int depth, float height, float minHeight, float maxHeight) {
         for (int i = startX; i < startX + width && i < GRID_SIZE; i++) {
             for (int j = startZ; j < startZ + depth && j < GRID_SIZE; j++) {
-                heightMap[i][j] = height;
+                boolean isTop = i > startX + width / 4 && i <= startX + width / 4 * 3 && j > startZ + depth / 4 && j <= startZ + depth / 4 * 3;
+                heightMap[i][j] = isTop ? height + 2 : height;
                 typeMap[i][j] = ElementType.Building; // 建筑物类型
             }
         }
