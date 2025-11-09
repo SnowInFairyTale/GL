@@ -1,7 +1,5 @@
 package com.example.gl;
 
-// MainActivity.java
-
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;

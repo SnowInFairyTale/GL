@@ -1,6 +1,5 @@
 package com.example.gl;
 
-// ShaderUtils.java
 import android.content.Context;
 import android.opengl.GLES30;
 import android.util.Log;

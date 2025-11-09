@@ -1,6 +1,5 @@
 package com.example.gl;
 
-// TerrainGLSurfaceView.java
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;

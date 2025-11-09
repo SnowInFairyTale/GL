@@ -1,7 +1,5 @@
 package com.example.gl;
 
-// TerrainData.java
-
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
