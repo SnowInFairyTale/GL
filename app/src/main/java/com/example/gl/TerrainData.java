@@ -16,7 +16,7 @@ public class TerrainData {
     private static final float MAX_HEIGHT = 10.0f;
 
     // 插值配置
-    private static final boolean USE_INTERPOLATION = true; // 是否启用插值
+    private static final boolean USE_INTERPOLATION = false; // 是否启用插值
 
     public static class Vertex {
         public float x, y, z;
@@ -292,7 +292,6 @@ public class TerrainData {
 
         // 更新最终的高度范围
         final int finalGridSize = USE_INTERPOLATION ? FINAL_GRID_SIZE : BASE_GRID_SIZE;
-        minHeight = 0;
         maxHeight = 0;
         for (int i = 0; i < finalGridSize; i++) {
             for (int j = 0; j < finalGridSize; j++) {
@@ -317,7 +316,7 @@ public class TerrainData {
         addDetailedBuildings(vertexList, heightMap, typeMap, finalGridSize);
 
         // 在创建网格数据前计算平滑法线
-        calculateSmoothNormals(vertexList);
+//        calculateSmoothNormals(vertexList);
 
         // 转换为FloatBuffer
         return createMeshData(vertexList, minHeight, maxHeight);

@@ -255,6 +255,9 @@ public class GLRenderer implements GLSurfaceView.Renderer {
         GLES30.glClearColor(0.6f, 0.8f, 1.0f, 1.0f);
         GLES30.glEnable(GLES30.GL_DEPTH_TEST);
 
+        String capabilityReport = GLSupportChecker.getCapabilityReport();
+        Log.e("capabilityReport", capabilityReport);
+
         // 启用混合用于透明效果（如果需要）
         // GLES30.glEnable(GLES30.GL_BLEND);
         // GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
