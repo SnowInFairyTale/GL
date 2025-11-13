@@ -25,5 +25,9 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(MainActivity.this, CombineActivity.class);
             startActivity(intent);
         });
+        findViewById(R.id.combine_v2_bt).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, GLV2Activity.class);
+            startActivity(intent);
+        });
     }
 }

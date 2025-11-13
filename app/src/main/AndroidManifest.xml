@@ -29,6 +29,9 @@
         <activity
             android:name=".TerrainGLActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".GLV2Activity"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

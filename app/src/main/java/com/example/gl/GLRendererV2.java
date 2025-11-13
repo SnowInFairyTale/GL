@@ -90,7 +90,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         TESSELLATION
     }
 
-    private RenderMode currentMode = RenderMode.SOLID;
+    private RenderMode currentMode = RenderMode.TESSELLATION;
     private long lastFrameTime = System.currentTimeMillis();
 
     // 性能监控
@@ -142,6 +142,10 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
 
     public String getCurrentViewMode() {
         return isFirstPersonView ? "第一人称漫游" : "上帝视角";
+    }
+
+    protected boolean isFirstPersonView() {
+        return isFirstPersonView;
     }
 
     public void toggleRenderMode() {
@@ -673,6 +677,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         GLES32.glDrawArrays(GLES32.GL_PATCHES, 0, meshData.vertexCount);
 
         GLES32.glDisableVertexAttribArray(tessPositionHandle);
+        Log.e("csdcdscdscdscds","akssajqj");
     }
 
     private void disableVertexArrays() {

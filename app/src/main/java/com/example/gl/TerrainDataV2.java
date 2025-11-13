@@ -394,7 +394,7 @@ public class TerrainDataV2 {
         addDetailedBuildings(vertexList, heightMap, typeMap, finalGridSize);
 
         // 步骤6：计算平滑法线
-        calculateSmoothNormals(vertexList);
+//        calculateSmoothNormals(vertexList);
 
         // 步骤7：创建网格数据
         MeshData meshData = createMeshData(vertexList, minHeight, maxHeight);
