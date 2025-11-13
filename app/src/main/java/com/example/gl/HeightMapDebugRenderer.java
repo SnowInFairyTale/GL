@@ -24,8 +24,8 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
     private static final float[] VERTICES = {
             -1.0f, -1.0f, 0.0f,  // 左下
             1.0f, -1.0f, 0.0f,  // 右下
-            -1.0f,  1.0f, 0.0f,  // 左上
-            1.0f,  1.0f, 0.0f   // 右上
+            -1.0f, 1.0f, 0.0f,  // 左上
+            1.0f, 1.0f, 0.0f   // 右上
     };
 
     private static final float[] TEX_COORDS = {
@@ -35,9 +35,43 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
             1.0f, 1.0f   // 右上
     };
 
+
+
+    // 手动加载一个测试纹理
+    private int loadTestTexture() {
+        // 创建一个简单的测试纹理（2x2 红色纹理）
+        ByteBuffer buffer = ByteBuffer.allocateDirect(4 * 4 * 4); // 2x2 RGBA
+        buffer.order(ByteOrder.nativeOrder());
+
+        // 填充红色
+        for (int i = 0; i < 16; i += 4) {
+            buffer.put((byte)255); // R
+            buffer.put((byte)0);   // G
+            buffer.put((byte)0);   // B
+            buffer.put((byte)255); // A
+        }
+        buffer.position(0);
+
+        int[] textureId = new int[1];
+        GLES32.glGenTextures(1, textureId, 0);
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureId[0]);
+
+        GLES32.glTexImage2D(
+                GLES32.GL_TEXTURE_2D, 0, GLES32.GL_RGBA,
+                2, 2, 0, GLES32.GL_RGBA,
+                GLES32.GL_UNSIGNED_BYTE, buffer
+        );
+
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D, GLES32.GL_TEXTURE_MIN_FILTER, GLES32.GL_NEAREST);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D, GLES32.GL_TEXTURE_MAG_FILTER, GLES32.GL_NEAREST);
+
+        return textureId[0];
+    }
+
     public HeightMapDebugRenderer(Context context, int heightMapTextureId) {
         this.context = context;
         int roofImageTextureId = GLTools.loadTexture(context, R.drawable.roof_texture);
+        roofImageTextureId = loadTestTexture();
         this.heightMapTextureId = roofImageTextureId;
 
         // 初始化缓冲区
@@ -104,37 +138,9 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
     }
 
     private void loadDebugShaders() {
-        String vertexShaderSource =
-                "#version 300 es\n" +
-                        "layout(location = 0) in vec3 aPosition;\n" +
-                        "layout(location = 1) in vec2 aTexCoord;\n" +
-                        "out vec2 vTexCoord;\n" +
-                        "void main() {\n" +
-                        "    gl_Position = vec4(aPosition, 1.0);\n" +
-                        "    vTexCoord = aTexCoord;\n" +
-                        "}";
+        String vertexShaderSource = ShaderUtils.loadShader(context, R.raw.height_map_debug_vertex_shader);
 
-        String fragmentShaderSource =
-                "#version 300 es\n" +
-                        "precision mediump float;\n" +
-                        "in vec2 vTexCoord;\n" +
-                        "uniform sampler2D uHeightMap;\n" +
-                        "out vec4 fragColor;\n" +
-                        "void main() {\n" +
-                        "    float height = texture(uHeightMap, vTexCoord).r;\n" +
-                        "    \n" +
-                        "    // 调试输出：显示原始高度值\n" +
-                        "    fragColor = vec4(height, height, height, 1.0);\n" +
-                        "    \n" +
-                        "    // 或者使用彩色显示：\n" +
-                        "    // if (height < 0.3) {\n" +
-                        "    //     fragColor = vec4(0.0, 0.0, 1.0, 1.0); // 蓝色\n" +
-                        "    // } else if (height < 0.6) {\n" +
-                        "    //     fragColor = vec4(0.0, 1.0, 0.0, 1.0); // 绿色\n" +
-                        "    // } else {\n" +
-                        "    //     fragColor = vec4(1.0, 1.0, 1.0, 1.0); // 白色\n" +
-                        "    // }\n" +
-                        "}";
+        String fragmentShaderSource = ShaderUtils.loadShader(context, R.raw.height_map_debug_fragment_shader);
 
         debugProgram = GLES32.glCreateProgram();
         int vertexShader = compileShader(GLES32.GL_VERTEX_SHADER, vertexShaderSource);
