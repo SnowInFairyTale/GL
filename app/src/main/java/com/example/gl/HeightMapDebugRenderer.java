@@ -14,17 +14,17 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "HeightMapDebug";
-    private Context context;
+    private final Context context;
     private int debugProgram;
-    private FloatBuffer vertexBuffer;
-    private FloatBuffer texCoordBuffer;
+    private final FloatBuffer vertexBuffer;
+    private final FloatBuffer texCoordBuffer;
 
 
     private int positionHandle;
     private int texCoordHandle;
-    private int roofTextureHandle;
+    private int uHeightMapTextureHandle;
 
-    private int roofTextureId;
+    private int uHeightMapTextureId;
 
     // 简单的全屏四边形顶点（使用vec4，包含w分量）
     private static final float[] VERTICES = {
@@ -63,7 +63,7 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
 
         // 加载着色器
         String vertexShader = ShaderUtils.loadShader(context, R.raw.height_map_debug_vertex_shader);
-        String fragmentShader = ShaderUtils.loadShader(context, R.raw.height_map_debug_fragment_shader);
+        String fragmentShader = ShaderUtils.loadShader(context, R.raw.height_map_debug_fragment_shader1);
         debugProgram = ShaderUtils.createProgram(vertexShader, fragmentShader);
 
         // 检查OpenGL错误
@@ -80,20 +80,22 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
         positionHandle = GLES30.glGetAttribLocation(debugProgram, "aPosition");
         // 纹理相关属性
         texCoordHandle = GLES30.glGetAttribLocation(debugProgram, "aTexCoord");
-        roofTextureHandle = GLES30.glGetUniformLocation(debugProgram, "uRoofTexture");
+        uHeightMapTextureHandle = GLES30.glGetUniformLocation(debugProgram, "uHeightMap");
 
         // 检查是否获取成功
         if (texCoordHandle == -1) Log.e(TAG, "aTexCoord attribute not found");
-        if (roofTextureHandle == -1) Log.e(TAG, "uRoofTexture uniform not found");
+        if (uHeightMapTextureHandle == -1) Log.e(TAG, "uHeightMapTextureHandle uniform not found");
     }
 
     private void loadTextures() {
         // 加载屋顶纹理
-        roofTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
-//        roofTextureId = TerrainDataV2.generateHeightMapTexture();
+//        uHeightMapTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
+
+        TerrainDataV2.generateTerrainMesh();
+        uHeightMapTextureId = TerrainDataV2.generateHeightMapTexture2();
 
         // 如果纹理加载失败，使用默认颜色
-        if (roofTextureId == 0) {
+        if (uHeightMapTextureId == 0) {
             Log.e(TAG, "Failed to load textures, using default colors");
         } else {
             Log.i(TAG, "Textures loaded successfully");
@@ -108,15 +110,14 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-//        Log.i(TAG, "onDrawFrame");
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
 
         GLES30.glUseProgram(debugProgram);
 
-        if (roofTextureHandle != -1 && roofTextureId != 0) {
+        if (uHeightMapTextureHandle != -1 && uHeightMapTextureId != 0) {
             GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, roofTextureId);
-            GLES30.glUniform1i(roofTextureHandle, 1);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, uHeightMapTextureId);
+            GLES30.glUniform1i(uHeightMapTextureHandle, 1);
         }
 
         if (positionHandle != -1) {

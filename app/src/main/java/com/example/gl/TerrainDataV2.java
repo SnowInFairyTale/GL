@@ -1,5 +1,8 @@
 package com.example.gl;
 
+import android.opengl.GLES32;
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -404,7 +407,7 @@ public class TerrainDataV2 {
     }
 
     // 生成高度图纹理（用于曲面细分）
-    public static int generateHeightMapTexture() {
+    public static int generateHeightMapTexture2() {
         if (heightMapData == null) return -1;
 
         int width = heightMapData.length;
@@ -437,25 +440,97 @@ public class TerrainDataV2 {
         buffer.position(0);
 
         int[] textureId = new int[1];
-        android.opengl.GLES32.glGenTextures(1, textureId, 0);
-        android.opengl.GLES32.glBindTexture(android.opengl.GLES32.GL_TEXTURE_2D, textureId[0]);
+        GLES32.glGenTextures(1, textureId, 0);
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureId[0]);
 
-        android.opengl.GLES32.glTexImage2D(
-                android.opengl.GLES32.GL_TEXTURE_2D, 0, android.opengl.GLES32.GL_RGBA,
-                width, height, 0, android.opengl.GLES32.GL_RGBA,
-                android.opengl.GLES32.GL_UNSIGNED_BYTE, buffer
+        GLES32.glTexImage2D(
+                GLES32.GL_TEXTURE_2D, 0, GLES32.GL_RGBA,
+                width, height, 0, GLES32.GL_RGBA,
+                GLES32.GL_UNSIGNED_BYTE, buffer
         );
 
-        android.opengl.GLES32.glTexParameteri(android.opengl.GLES32.GL_TEXTURE_2D,
-                android.opengl.GLES32.GL_TEXTURE_MIN_FILTER, android.opengl.GLES32.GL_LINEAR);
-        android.opengl.GLES32.glTexParameteri(android.opengl.GLES32.GL_TEXTURE_2D,
-                android.opengl.GLES32.GL_TEXTURE_MAG_FILTER, android.opengl.GLES32.GL_LINEAR);
-        android.opengl.GLES32.glTexParameteri(android.opengl.GLES32.GL_TEXTURE_2D,
-                android.opengl.GLES32.GL_TEXTURE_WRAP_S, android.opengl.GLES32.GL_CLAMP_TO_EDGE);
-        android.opengl.GLES32.glTexParameteri(android.opengl.GLES32.GL_TEXTURE_2D,
-                android.opengl.GLES32.GL_TEXTURE_WRAP_T, android.opengl.GLES32.GL_CLAMP_TO_EDGE);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_MIN_FILTER, GLES32.GL_LINEAR);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_MAG_FILTER, GLES32.GL_LINEAR);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_WRAP_S, GLES32.GL_CLAMP_TO_EDGE);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_WRAP_T, GLES32.GL_CLAMP_TO_EDGE);
 
         heightMapTextureId = textureId[0];
+        return textureId[0];
+    }
+
+    // 生成高度图纹理（修复版）
+    public static int generateHeightMapTexture() {
+        if (heightMapData == null) return -1;
+
+        int width = heightMapData.length;
+        int height = heightMapData[0].length;
+
+        // 找到高度范围（包含负值）
+        float minHeight = Float.MAX_VALUE;
+        float maxHeight = -Float.MAX_VALUE;  // 注意这里用负的MAX_VALUE
+
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                float h = heightMapData[i][j];
+                minHeight = Math.min(minHeight, h);
+                maxHeight = Math.max(maxHeight, h);
+            }
+        }
+
+        Log.d("HeightMap", String.format("Height range: min=%.3f, max=%.3f", minHeight, maxHeight));
+
+        ByteBuffer buffer = ByteBuffer.allocateDirect(width * height * 4);
+        buffer.order(ByteOrder.nativeOrder());
+
+        // 归一化高度到[0,1]范围，正确处理负值
+        float heightRange = Math.max(0.001f, maxHeight - minHeight); // 避免除零
+
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                float normalized = (heightMapData[i][j] - minHeight) / heightRange;
+                // 限制在[0,1]范围内
+                normalized = Math.max(0.0f, Math.min(1.0f, normalized));
+
+                byte value = (byte)(normalized * 255);
+                buffer.put(value); // R
+                buffer.put(value); // G  
+                buffer.put(value); // B
+                buffer.put((byte)255); // A
+            }
+        }
+        buffer.position(0);
+
+        int[] textureId = new int[1];
+        GLES32.glGenTextures(1, textureId, 0);
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureId[0]);
+
+        // 使用单通道格式更合适
+        GLES32.glTexImage2D(
+                GLES32.GL_TEXTURE_2D, 0, GLES32.GL_RGBA,  // 保持RGBA兼容性
+                width, height, 0, GLES32.GL_RGBA,
+                GLES32.GL_UNSIGNED_BYTE, buffer
+        );
+
+        // 设置纹理参数
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D, GLES32.GL_TEXTURE_MIN_FILTER, GLES32.GL_LINEAR);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D, GLES32.GL_TEXTURE_MAG_FILTER, GLES32.GL_LINEAR);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D, GLES32.GL_TEXTURE_WRAP_S, GLES32.GL_CLAMP_TO_EDGE);
+        GLES32.glTexParameteri(GLES32.GL_TEXTURE_2D, GLES32.GL_TEXTURE_WRAP_T, GLES32.GL_CLAMP_TO_EDGE);
+
+        heightMapTextureId = textureId[0];
+
+        // 检查纹理是否创建成功
+        int error = GLES32.glGetError();
+        if (error != GLES32.GL_NO_ERROR) {
+            Log.e("HeightMap", "OpenGL error: " + error);
+        } else {
+            Log.d("HeightMap", "Height map texture created: " + textureId[0]);
+        }
+
         return textureId[0];
     }
 
