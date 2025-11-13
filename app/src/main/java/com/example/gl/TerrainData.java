@@ -9,9 +9,14 @@ import java.util.Map;
 import java.util.Random;
 
 public class TerrainData {
-    private static final int GRID_SIZE = 50; // 50x50的网格
+    // 基础网格配置
+    private static final int BASE_GRID_SIZE = 50; // 传统方法生成的网格大小
+    private static final int FINAL_GRID_SIZE = 100; // 插值后的最终网格大小
     private static final float TERRAIN_SIZE = 100.0f;
     private static final float MAX_HEIGHT = 10.0f;
+
+    // 插值配置
+    private static final boolean USE_INTERPOLATION = true; // 是否启用插值
 
     public static class Vertex {
         public float x, y, z;
@@ -49,6 +54,78 @@ public class TerrainData {
         public int vertexCount;
         public float minHeight;
         public float maxHeight;
+    }
+
+    // 生成传统高度图（50x50）
+    private static float[][] generateBaseHeightMap(Random random) {
+        float[][] baseHeightMap = new float[BASE_GRID_SIZE][BASE_GRID_SIZE];
+
+        for (int i = 0; i < BASE_GRID_SIZE; i++) {
+            for (int j = 0; j < BASE_GRID_SIZE; j++) {
+                float x = (i / (float) BASE_GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                float z = (j / (float) BASE_GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+
+                // 传统的地形高度计算
+                float height = (float) (Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3.0f +
+                        Math.sin(x * 0.05) * Math.cos(z * 0.03) * 2.0f);
+
+                // 添加随机噪声
+                height += random.nextFloat() * 2.0f - 1.0f;
+                height = Math.max(-2.0f, Math.min(MAX_HEIGHT, height));
+
+                baseHeightMap[i][j] = height;
+            }
+        }
+
+        return baseHeightMap;
+    }
+
+    // 在基础高度图上进行双线性插值生成最终高度图
+    private static float[][] interpolateHeightMap(float[][] baseHeightMap, Random random) {
+        float[][] finalHeightMap = new float[FINAL_GRID_SIZE][FINAL_GRID_SIZE];
+
+        for (int i = 0; i < FINAL_GRID_SIZE; i++) {
+            for (int j = 0; j < FINAL_GRID_SIZE; j++) {
+                // 计算在基础网格中的对应位置
+                float baseX = i / (float)FINAL_GRID_SIZE * (BASE_GRID_SIZE - 1);
+                float baseZ = j / (float)FINAL_GRID_SIZE * (BASE_GRID_SIZE - 1);
+
+                // 双线性插值
+                finalHeightMap[i][j] = bilinearInterpolate(baseHeightMap, baseX, baseZ);
+
+                // 添加细微的高频噪声以增加真实感，但幅度较小
+                finalHeightMap[i][j] += (random.nextFloat() * 0.2f - 0.1f);
+            }
+        }
+
+        return finalHeightMap;
+    }
+
+    // 双线性插值
+    private static float bilinearInterpolate(float[][] values, float x, float z) {
+        int x1 = (int) Math.floor(x);
+        int x2 = x1 + 1;
+        int z1 = (int) Math.floor(z);
+        int z2 = z1 + 1;
+
+        // 边界检查
+        x1 = Math.max(0, Math.min(values.length - 1, x1));
+        x2 = Math.max(0, Math.min(values.length - 1, x2));
+        z1 = Math.max(0, Math.min(values[0].length - 1, z1));
+        z2 = Math.max(0, Math.min(values[0].length - 1, z2));
+
+        float q11 = values[x1][z1];
+        float q12 = values[x1][z2];
+        float q21 = values[x2][z1];
+        float q22 = values[x2][z2];
+
+        float dx = x - x1;
+        float dz = z - z1;
+
+        // 双线性插值公式
+        float top = q11 * (1 - dx) + q21 * dx;
+        float bottom = q12 * (1 - dx) + q22 * dx;
+        return top * (1 - dz) + bottom * dz;
     }
 
     // 平滑法线计算的核心方法
@@ -168,69 +245,78 @@ public class TerrainData {
 
     public static MeshData generateTerrainMesh() {
         List<Vertex> vertexList = new ArrayList<>();
-        float[][] heightMap = new float[GRID_SIZE][GRID_SIZE];
-        int[][] typeMap = new int[GRID_SIZE][GRID_SIZE];
+        float[][] heightMap;
+        int[][] typeMap;
 
         Random random = new Random(42);
         float minHeight = 0;
         float maxHeight = 0;
 
-        // 生成高度图
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                float x = (i / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-                float z = (j / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        // 生成基础高度图（50x50）
+        float[][] baseHeightMap = generateBaseHeightMap(random);
+        int[][] baseTypeMap = new int[BASE_GRID_SIZE][BASE_GRID_SIZE];
 
-                // 基础地形高度
-                float height = (float) (Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3.0f +
-                        Math.sin(x * 0.05) * Math.cos(z * 0.03) * 2.0f);
-
-                // 添加随机噪声
-                height += random.nextFloat() * 2.0f - 1.0f;
-                height = Math.max(-2.0f, Math.min(MAX_HEIGHT, height));
-
-                heightMap[i][j] = height;
-                typeMap[i][j] = ElementType.Land; // 默认地面
+        // 初始化基础类型图
+        for (int i = 0; i < BASE_GRID_SIZE; i++) {
+            for (int j = 0; j < BASE_GRID_SIZE; j++) {
+                baseTypeMap[i][j] = ElementType.Land;
+                float height = baseHeightMap[i][j];
                 minHeight = Math.min(minHeight, height);
                 maxHeight = Math.max(maxHeight, height);
             }
         }
 
+        // 在基础网格上添加特征
         // 添加道路
-        addRoad(heightMap, typeMap, GRID_SIZE / 2, 0, GRID_SIZE, 8, minHeight, maxHeight);
+        addRoad(baseHeightMap, baseTypeMap, BASE_GRID_SIZE / 2, 0, BASE_GRID_SIZE, 8, minHeight, maxHeight);
 
         // 添加水坑
-        addWaterPool(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE / 4, 6, minHeight, maxHeight);
+        addWaterPool(baseHeightMap, baseTypeMap, BASE_GRID_SIZE / 4, BASE_GRID_SIZE / 4, 6, minHeight, maxHeight);
 
         // 添加草坪
-        addLawn(heightMap, typeMap, GRID_SIZE * 3 / 4, GRID_SIZE * 3 / 4, 10, minHeight, maxHeight);
+        addLawn(baseHeightMap, baseTypeMap, BASE_GRID_SIZE * 3 / 4, BASE_GRID_SIZE * 3 / 4, 10, minHeight, maxHeight);
 
         // 添加建筑物区域
-        addBuilding(heightMap, typeMap, GRID_SIZE / 4, GRID_SIZE * 3 / 4, 6, 6, 10.0f, minHeight, maxHeight);
+        addBuilding(baseHeightMap, baseTypeMap, BASE_GRID_SIZE / 4, BASE_GRID_SIZE * 3 / 4, 6, 6, 10.0f, minHeight, maxHeight);
 
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
+        // 选择是否进行插值
+        if (USE_INTERPOLATION) {
+            // 使用插值生成最终高度图和类型图
+            heightMap = interpolateHeightMap(baseHeightMap, random);
+            typeMap = interpolateTypeMap(baseTypeMap);
+        } else {
+            // 直接使用基础网格
+            heightMap = baseHeightMap;
+            typeMap = baseTypeMap;
+        }
+
+        // 更新最终的高度范围
+        final int finalGridSize = USE_INTERPOLATION ? FINAL_GRID_SIZE : BASE_GRID_SIZE;
+        minHeight = 0;
+        maxHeight = 0;
+        for (int i = 0; i < finalGridSize; i++) {
+            for (int j = 0; j < finalGridSize; j++) {
                 float height = heightMap[i][j];
                 maxHeight = Math.max(maxHeight, height);
             }
         }
 
-        // 生成网格顶点 - 修复顶点顺序为逆时针
-        for (int i = 0; i < GRID_SIZE - 1; i++) {
-            for (int j = 0; j < GRID_SIZE - 1; j++) {
+        // 生成最终网格顶点 - 顶点顺序为逆时针
+        for (int i = 0; i < finalGridSize - 1; i++) {
+            for (int j = 0; j < finalGridSize - 1; j++) {
                 // 两个三角形组成一个四边形
-                addQuad(vertexList, heightMap, typeMap, i, j, i + 1, j, i, j + 1);
-                addQuad(vertexList, heightMap, typeMap, i + 1, j, i + 1, j + 1, i, j + 1);
+                addQuad(vertexList, heightMap, typeMap, i, j, i + 1, j, i, j + 1, finalGridSize);
+                addQuad(vertexList, heightMap, typeMap, i + 1, j, i + 1, j + 1, i, j + 1, finalGridSize);
             }
         }
 
         // 添加树木
-        addTrees(vertexList, heightMap, typeMap);
+        addTrees(vertexList, heightMap, typeMap, finalGridSize);
 
         // 添加详细建筑物
-        addDetailedBuildings(vertexList, heightMap, typeMap);
+        addDetailedBuildings(vertexList, heightMap, typeMap, finalGridSize);
 
-        // 关键修改：在创建网格数据前计算平滑法线
+        // 在创建网格数据前计算平滑法线
         calculateSmoothNormals(vertexList);
 
         // 转换为FloatBuffer
@@ -241,7 +327,7 @@ public class TerrainData {
         int halfWidth = width / 2;
         for (int i = centerX - length / 2; i < centerX + length / 2; i++) {
             for (int j = centerZ - halfWidth; j < centerZ + halfWidth; j++) {
-                if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
+                if (i >= 0 && i < heightMap.length && j >= 0 && j < heightMap[0].length) {
                     heightMap[i][j] = (maxHeight - minHeight) / 2; // 平坦道路
                     typeMap[i][j] = ElementType.Road; // 道路类型
                 }
@@ -253,7 +339,7 @@ public class TerrainData {
         float maxRange = lineDistance(radius, radius);
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
-                if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
+                if (i >= 0 && i < heightMap.length && j >= 0 && j < heightMap[0].length) {
                     float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius) {
                         float currRange = lineDistance(Math.abs(centerX - i), Math.abs(centerZ - j));
@@ -269,7 +355,7 @@ public class TerrainData {
     private static void addLawn(float[][] heightMap, int[][] typeMap, int centerX, int centerZ, int radius, float minHeight, float maxHeight) {
         for (int i = centerX - radius; i <= centerX + radius; i++) {
             for (int j = centerZ - radius; j <= centerZ + radius; j++) {
-                if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
+                if (i >= 0 && i < heightMap.length && j >= 0 && j < heightMap[0].length) {
                     float dist = (float) Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerZ, 2));
                     if (dist <= radius && typeMap[i][j] == ElementType.Land) {
                         typeMap[i][j] = ElementType.Lawn; // 草坪类型
@@ -280,8 +366,8 @@ public class TerrainData {
     }
 
     private static void addBuilding(float[][] heightMap, int[][] typeMap, int startX, int startZ, int width, int depth, float height, float minHeight, float maxHeight) {
-        for (int i = startX; i < startX + width && i < GRID_SIZE; i++) {
-            for (int j = startZ; j < startZ + depth && j < GRID_SIZE; j++) {
+        for (int i = startX; i < startX + width && i < heightMap.length; i++) {
+            for (int j = startZ; j < startZ + depth && j < heightMap[0].length; j++) {
                 boolean isTop = i > startX + width / 4 && i <= startX + width / 4 * 3 && j > startZ + depth / 4 && j <= startZ + depth / 4 * 3;
                 heightMap[i][j] = isTop ? height + 2 : height;
                 typeMap[i][j] = ElementType.Building; // 建筑物类型
@@ -291,29 +377,29 @@ public class TerrainData {
 
     // 在 addQuad 方法中，修改法线计算
     private static void addQuad(List<Vertex> vertices, float[][] heightMap, int[][] typeMap,
-                                int i1, int j1, int i2, int j2, int i3, int j3) {
-        float x1 = (i1 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-        float z1 = (j1 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                                int i1, int j1, int i2, int j2, int i3, int j3, int gridSize) {
+        float x1 = (i1 / (float) gridSize - 0.5f) * TERRAIN_SIZE;
+        float z1 = (j1 / (float) gridSize - 0.5f) * TERRAIN_SIZE;
         float y1 = heightMap[i1][j1];
 
-        float x2 = (i2 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-        float z2 = (j2 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float x2 = (i2 / (float) gridSize - 0.5f) * TERRAIN_SIZE;
+        float z2 = (j2 / (float) gridSize - 0.5f) * TERRAIN_SIZE;
         float y2 = heightMap[i2][j2];
 
-        float x3 = (i3 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-        float z3 = (j3 / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+        float x3 = (i3 / (float) gridSize - 0.5f) * TERRAIN_SIZE;
+        float z3 = (j3 / (float) gridSize - 0.5f) * TERRAIN_SIZE;
         float y3 = heightMap[i3][j3];
 
         // 计算法线
 //        float[] normal = calculateNormal(x1, y1, z1, x2, y2, z2, x3, y3, z3);
 
-        // 为每个顶点计算独立的法线（简化版本）
-        float[] normal = {0.0f, 1.0f, 0.0f}; // 默认朝上的法线
+        // 使用默认法线，平滑法线会在后续统一计算
+        float[] defaultNormal = {0.0f, 1.0f, 0.0f};
 
         // 添加三个顶点（一个三角形）- 逆时针顺序
-        addVertex(vertices, x1, y1, z1, typeMap[i1][j1], normal);
-        addVertex(vertices, x2, y2, z2, typeMap[i2][j2], normal);
-        addVertex(vertices, x3, y3, z3, typeMap[i3][j3], normal);
+        addVertex(vertices, x1, y1, z1, typeMap[i1][j1], defaultNormal);
+        addVertex(vertices, x2, y2, z2, typeMap[i2][j2], defaultNormal);
+        addVertex(vertices, x3, y3, z3, typeMap[i3][j3], defaultNormal);
     }
 
     private static float[] calculateNormal(float x1, float y1, float z1,
@@ -403,20 +489,20 @@ public class TerrainData {
         }
     }
 
-    private static void addTrees(List<Vertex> vertices, float[][] heightMap, int[][] typeMap) {
+    private static void addTrees(List<Vertex> vertices, float[][] heightMap, int[][] typeMap, int gridSize) {
         Random random = new Random(42);
         int treeCount = 15;
 
         for (int t = 0; t < treeCount; t++) {
-            int i = random.nextInt(GRID_SIZE - 4) + 2;
-            int j = random.nextInt(GRID_SIZE - 4) + 2;
+            int i = random.nextInt(gridSize - 4) + 2;
+            int j = random.nextInt(gridSize - 4) + 2;
 
             // 确保在草坪或普通地面上，且不在道路、水坑或建筑物上
             if ((typeMap[i][j] == ElementType.Land || typeMap[i][j] == ElementType.Lawn) &&
                     heightMap[i][j] > -1.0f && heightMap[i][j] < 5.0f) {
 
-                float x = (i / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
-                float z = (j / (float) GRID_SIZE - 0.5f) * TERRAIN_SIZE;
+                float x = (i / (float) gridSize - 0.5f) * TERRAIN_SIZE;
+                float z = (j / (float) gridSize - 0.5f) * TERRAIN_SIZE;
                 float y = heightMap[i][j];
 
                 // 创建简单的树（树干和树冠）
@@ -438,21 +524,21 @@ public class TerrainData {
                 new float[]{0.1f, 0.5f, 0.1f});
     }
 
-    private static void addDetailedBuildings(List<Vertex> vertices, float[][] heightMap, int[][] typeMap) {
+    private static void addDetailedBuildings(List<Vertex> vertices, float[][] heightMap, int[][] typeMap, int gridSize) {
         Random random = new Random(42);
         int buildingCount = 3;
 
         for (int b = 0; b < buildingCount; b++) {
-            int startX = random.nextInt(GRID_SIZE - 6) + 3;
-            int startZ = random.nextInt(GRID_SIZE - 6) + 3;
+            int startX = random.nextInt(gridSize - 6) + 3;
+            int startZ = random.nextInt(gridSize - 6) + 3;
             int width = random.nextInt(3) + 3;
             int depth = random.nextInt(3) + 3;
             float height = random.nextFloat() * 4.0f + 3.0f;
 
             // 确保不在道路或水坑上
             boolean validLocation = true;
-            for (int i = startX; i < startX + width && i < GRID_SIZE; i++) {
-                for (int j = startZ; j < startZ + depth && j < GRID_SIZE; j++) {
+            for (int i = startX; i < startX + width && i < gridSize; i++) {
+                for (int j = startZ; j < startZ + depth && j < gridSize; j++) {
                     if (typeMap[i][j] == ElementType.Road || typeMap[i][j] == ElementType.WaterPool) {
                         validLocation = false;
                         break;
@@ -462,24 +548,24 @@ public class TerrainData {
             }
 
             if (validLocation) {
-                addBuildingWithCube(vertices, startX, startZ, width, depth, height);
+                addBuildingWithCube(vertices, startX, startZ, width, depth, height, gridSize);
             }
         }
     }
 
-    private static void addBuildingWithCube(List<Vertex> vertices, int startX, int startZ, int width, int depth, float height) {
-        float centerX = (startX + width / 2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE / 2;
-        float centerZ = (startZ + depth / 2.0f) / GRID_SIZE * TERRAIN_SIZE - TERRAIN_SIZE / 2;
+    private static void addBuildingWithCube(List<Vertex> vertices, int startX, int startZ, int width, int depth, float height, int gridSize) {
+        float centerX = (startX + width / 2.0f) / gridSize * TERRAIN_SIZE - TERRAIN_SIZE / 2;
+        float centerZ = (startZ + depth / 2.0f) / gridSize * TERRAIN_SIZE - TERRAIN_SIZE / 2;
         float baseY = 0f; // 假设地面高度为0
 
         // 建筑物主体 - 使用墙体纹理类型
         addCube(vertices, centerX, baseY + height / 2, centerZ,
-                width * TERRAIN_SIZE / GRID_SIZE, height, ElementType.HouseWall, depth * TERRAIN_SIZE / GRID_SIZE,
+                width * TERRAIN_SIZE / gridSize, height, ElementType.HouseWall, depth * TERRAIN_SIZE / gridSize,
                 new float[]{0.6f, 0.4f, 0.2f});
 
         // 屋顶 - 使用屋顶纹理类型
         addCube(vertices, centerX, baseY + height + 0.5f, centerZ,
-                (width + 0.5f) * TERRAIN_SIZE / GRID_SIZE, 1.0f, ElementType.Roof, (depth + 0.5f) * TERRAIN_SIZE / GRID_SIZE,
+                (width + 0.5f) * TERRAIN_SIZE / gridSize, 1.0f, ElementType.Roof, (depth + 0.5f) * TERRAIN_SIZE / gridSize,
                 new float[]{0.3f, 0.2f, 0.1f});
     }
 
@@ -594,6 +680,26 @@ public class TerrainData {
         float y = centerY + radius * (float) (Math.cos(phi));
         float z = centerZ + radius * (float) (Math.sin(phi) * Math.sin(theta));
         return new float[]{x, y, z};
+    }
+
+    // 类型图插值（最近邻插值，因为类型是离散值）
+    private static int[][] interpolateTypeMap(int[][] baseTypeMap) {
+        int[][] finalTypeMap = new int[FINAL_GRID_SIZE][FINAL_GRID_SIZE];
+
+        for (int i = 0; i < FINAL_GRID_SIZE; i++) {
+            for (int j = 0; j < FINAL_GRID_SIZE; j++) {
+                // 计算在基础网格中的对应位置（使用最近邻插值）
+                int baseX = Math.round(i / (float)FINAL_GRID_SIZE * (BASE_GRID_SIZE - 1));
+                int baseZ = Math.round(j / (float)FINAL_GRID_SIZE * (BASE_GRID_SIZE - 1));
+
+                baseX = Math.max(0, Math.min(BASE_GRID_SIZE - 1, baseX));
+                baseZ = Math.max(0, Math.min(BASE_GRID_SIZE - 1, baseZ));
+
+                finalTypeMap[i][j] = baseTypeMap[baseX][baseZ];
+            }
+        }
+
+        return finalTypeMap;
     }
 
     private static MeshData createMeshData(List<Vertex> vertices, float minHeight, float maxHeight) {
