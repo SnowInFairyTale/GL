@@ -32,6 +32,9 @@
         <activity
             android:name=".GLV2Activity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".HeightMapRenderActivity"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

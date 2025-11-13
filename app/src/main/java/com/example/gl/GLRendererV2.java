@@ -150,18 +150,18 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
 
     public void toggleRenderMode() {
         switch (currentMode) {
-            case SOLID:
-                if (GLSupportChecker.supportsTessellation() && TerrainDataV2.isTessellationEnabled()) {
-                    currentMode = RenderMode.TESSELLATION;
-                } else {
-                    currentMode = RenderMode.WIREFRAME;
-                }
-                break;
+//            case SOLID:
+//                if (GLSupportChecker.supportsTessellation() && TerrainDataV2.isTessellationEnabled()) {
+//                    currentMode = RenderMode.TESSELLATION;
+//                } else {
+//                    currentMode = RenderMode.WIREFRAME;
+//                }
+//                break;
             case WIREFRAME:
-                currentMode = RenderMode.SOLID;
+                currentMode = RenderMode.TESSELLATION;
                 break;
             case TESSELLATION:
-                currentMode = RenderMode.SOLID;
+                currentMode = RenderMode.WIREFRAME;
                 break;
         }
     }
@@ -303,8 +303,8 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         GLES32.glEnable(GLES32.GL_DEPTH_TEST);
 
         // 启用面剔除提高性能
-        GLES32.glEnable(GLES32.GL_CULL_FACE);
-        GLES32.glCullFace(GLES32.GL_BACK);
+//        GLES32.glEnable(GLES32.GL_CULL_FACE);
+//        GLES32.glCullFace(GLES32.GL_BACK);
 
         // 加载所有着色器
         loadStandardShaders();
@@ -520,7 +520,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         // 根据模式渲染
         switch (currentMode) {
             case SOLID:
-                renderStandard();
+//                renderStandard();
                 break;
             case WIREFRAME:
                 renderWireframe();
@@ -529,7 +529,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
                 if (tessellationProgram != 0) {
                     renderWithTessellation();
                 } else {
-                    renderStandard(); // 回退到标准渲染
+//                    renderStandard(); // 回退到标准渲染
                 }
                 break;
         }
@@ -615,7 +615,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
 
     private void renderWireframe() {
         if (wireframeProgram == 0) {
-            renderStandard(); // 回退到标准渲染
+//            renderStandard(); // 回退到标准渲染
             return;
         }
 
@@ -648,7 +648,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
 
     private void renderWithTessellation() {
         if (tessellationProgram == 0 || heightMapTextureId == -1) {
-            renderStandard(); // 回退到标准渲染
+//            renderStandard(); // 回退到标准渲染
             return;
         }
 

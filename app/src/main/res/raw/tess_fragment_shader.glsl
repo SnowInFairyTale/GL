@@ -70,5 +70,5 @@ void main() {
     }
 
     // 输出最终颜色
-    fragColor = vec4(finalColor, 1.0);
+    fragColor = vec4(vColor, 1.0);
 }
