@@ -14,7 +14,7 @@ public class TerrainDataV2 {
     // 基础网格配置
     private static final int BASE_GRID_SIZE = 50;
     private static final int FINAL_GRID_SIZE = 200; // 提高基础网格密度
-    private static final float TERRAIN_SIZE = 100.0f;
+    public static final float TERRAIN_SIZE = 100.0f;
     private static final float MAX_HEIGHT = 10.0f;
 
     // 高级特性配置
