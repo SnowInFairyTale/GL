@@ -1,5 +1,5 @@
 #version 320 es
-#extension GL_EXT_tessellation_shader : require
+#extension GL_EXT_tessellation_shader : enable
 
 layout(triangles, equal_spacing, ccw) in;
 

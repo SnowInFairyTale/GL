@@ -1,5 +1,5 @@
 #version 320 es
-#extension GL_EXT_tessellation_shader : require
+#extension GL_EXT_tessellation_shader : enable
 
 layout(vertices = 3) out;
 
@@ -37,6 +37,7 @@ float calculateAdaptiveTessLevel(vec3 p0, vec3 p1, vec3 p2) {
 
 void main() {
     // 传递位置到评估着色器
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
     tcPosition[gl_InvocationID] = gl_in[gl_InvocationID].gl_Position.xyz;
 
     // 只在第一个调用中设置细分级别
