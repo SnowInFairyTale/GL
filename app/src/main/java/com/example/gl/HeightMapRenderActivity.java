@@ -19,7 +19,7 @@ public class HeightMapRenderActivity extends AppCompatActivity {
         glSurfaceView.setEGLContextClientVersion(3);
 
         // 可选：设置EGL配置
-        glSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
+//        glSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
 
         HeightMapDebugRenderer renderer = new HeightMapDebugRenderer(this);
         glSurfaceView.setRenderer(renderer);
