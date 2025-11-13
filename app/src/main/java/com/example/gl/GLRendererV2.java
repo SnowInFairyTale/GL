@@ -365,10 +365,10 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
 
             tessellationProgram = GLES32.glCreateProgram();
 
-            // 编译并附加着色器
+            // 编译并附加着色器 - 使用正确的常量名
             attachShader(tessellationProgram, GLES32.GL_VERTEX_SHADER, tessVertexShader);
-            attachShader(tessellationProgram, GLES32.GL_TESS_CONTROL_SHADER_EXT, tessControlShader);
-            attachShader(tessellationProgram, GLES32.GL_TESS_EVALUATION_SHADER_EXT, tessEvalShader);
+            attachShader(tessellationProgram, GLES32.GL_TESS_CONTROL_SHADER, tessControlShader);
+            attachShader(tessellationProgram, GLES32.GL_TESS_EVALUATION_SHADER, tessEvalShader);
             attachShader(tessellationProgram, GLES32.GL_FRAGMENT_SHADER, tessFragmentShader);
 
             GLES32.glLinkProgram(tessellationProgram);
