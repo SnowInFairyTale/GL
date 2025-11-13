@@ -28,10 +28,10 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
 
     // 简单的全屏四边形顶点（使用vec4，包含w分量）
     private static final float[] VERTICES = {
-            -1.0f, -1.0f, 0.0f, 1.0f,  // 左下
-            1.0f, -1.0f, 0.0f, 1.0f,   // 右下
-            -1.0f, 1.0f, 0.0f, 1.0f,   // 左上
-            1.0f, 1.0f, 0.0f, 1.0f     // 右上
+            -1.0f, -1.0f, 0.0f,  // 左下
+            1.0f, -1.0f, 0.0f,   // 右下
+            -1.0f, 1.0f, 0.0f,   // 左上
+            1.0f, 1.0f, 0.0f     // 右上
     };
 
     private static final float[] TEX_COORDS = {
@@ -63,7 +63,7 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
 
         // 加载着色器
         String vertexShader = ShaderUtils.loadShader(context, R.raw.height_map_debug_vertex_shader);
-        String fragmentShader = ShaderUtils.loadShader(context, R.raw.height_map_debug_fragment_shader1);
+        String fragmentShader = ShaderUtils.loadShader(context, R.raw.height_map_debug_fragment_shader);
         debugProgram = ShaderUtils.createProgram(vertexShader, fragmentShader);
 
         // 检查OpenGL错误
@@ -119,12 +119,10 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
             GLES30.glUniform1i(roofTextureHandle, 1);
         }
 
-        GLES30.glEnableVertexAttribArray(positionHandle);
-        GLES30.glVertexAttribPointer(positionHandle, 4, GLES30.GL_FLOAT, false, 16, vertexBuffer);
-
         if (positionHandle != -1) {
             GLES30.glEnableVertexAttribArray(positionHandle);
-            GLES30.glVertexAttribPointer(positionHandle, 4, GLES30.GL_FLOAT, false, 16, vertexBuffer);
+//            GLES30.glVertexAttribPointer(positionHandle, 4, GLES30.GL_FLOAT, false, 16, vertexBuffer);
+            GLES30.glVertexAttribPointer(positionHandle, 3, GLES30.GL_FLOAT, false, 12, vertexBuffer);
         }
 
         if (texCoordHandle != -1) {
