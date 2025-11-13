@@ -1,7 +1,13 @@
 #version 300 es
 precision mediump float;
+
+in vec2 vTexCoord;
+
+uniform sampler2D uRoofTexture;
+
 out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);// 强制红色
+    vec4 texColor = texture(uRoofTexture, vTexCoord);
+    fragColor = texColor;
 }
