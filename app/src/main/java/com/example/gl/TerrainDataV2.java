@@ -663,16 +663,107 @@ public class TerrainDataV2 {
 
     private static void addCube(List<Vertex> vertices, float centerX, float centerY, float centerZ,
                                 float width, float height, int type, float depth, float[] color) {
-        // 立方体生成代码（与TerrainData相同）
-        // 这里省略详细实现以节省空间
-        // 实际使用时需要复制完整的addCube方法
+        float halfWidth = width / 2;
+        float halfHeight = height / 2;
+        float halfDepth = depth / 2;
+
+        // 立方体的8个顶点
+        float[][] cubeVertices = {
+                // 前面
+                {centerX - halfWidth, centerY - halfHeight, centerZ + halfDepth},
+                {centerX + halfWidth, centerY - halfHeight, centerZ + halfDepth},
+                {centerX + halfWidth, centerY + halfHeight, centerZ + halfDepth},
+                {centerX - halfWidth, centerY + halfHeight, centerZ + halfDepth},
+                // 后面
+                {centerX - halfWidth, centerY - halfHeight, centerZ - halfDepth},
+                {centerX + halfWidth, centerY - halfHeight, centerZ - halfDepth},
+                {centerX + halfWidth, centerY + halfHeight, centerZ - halfDepth},
+                {centerX - halfWidth, centerY + halfHeight, centerZ - halfDepth}
+        };
+
+        // 定义每个面的三角形和对应的纹理坐标
+        Object[][] faceData = {
+                // 前面 - 两个三角形和纹理坐标
+                {new int[]{0, 1, 2, 0, 2, 3}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 后面
+                {new int[]{5, 4, 7, 5, 7, 6}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 左面
+                {new int[]{4, 0, 3, 4, 3, 7}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 右面
+                {new int[]{1, 5, 6, 1, 6, 2}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 上面
+                {new int[]{3, 2, 6, 3, 6, 7}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}},
+                // 下面
+                {new int[]{4, 5, 1, 4, 1, 0}, new float[]{0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1}}
+        };
+
+        for (int faceIndex = 0; faceIndex < faceData.length; faceIndex++) {
+            int[] triangleIndices = (int[]) faceData[faceIndex][0];
+            float[] texCoords = (float[]) faceData[faceIndex][1];
+
+            // 计算当前面的法线
+            int v1Idx = triangleIndices[0];
+            int v2Idx = triangleIndices[1];
+            int v3Idx = triangleIndices[2];
+            float[] normal = calculateNormal(
+                    cubeVertices[v1Idx][0], cubeVertices[v1Idx][1], cubeVertices[v1Idx][2],
+                    cubeVertices[v2Idx][0], cubeVertices[v2Idx][1], cubeVertices[v2Idx][2],
+                    cubeVertices[v3Idx][0], cubeVertices[v3Idx][1], cubeVertices[v3Idx][2]
+            );
+
+            // 添加6个顶点（2个三角形）
+            for (int i = 0; i < 6; i++) {
+                int vertexIndex = triangleIndices[i];
+                float[] vertex = cubeVertices[vertexIndex];
+                float u = texCoords[i * 2];
+                float v = texCoords[i * 2 + 1];
+
+                addVertexWithTexCoord(vertices, vertex[0], vertex[1], vertex[2],
+                        type, color, normal, u, v);
+            }
+        }
     }
 
     private static void addSphere(List<Vertex> vertices, float centerX, float centerY, float centerZ,
                                   float radius, float[] color) {
-        // 球体生成代码（与TerrainData相同）
-        // 这里省略详细实现以节省空间
-        // 实际使用时需要复制完整的addSphere方法
+        int stacks = 8;  // 经线分段数
+        int sectors = 8; // 纬线分段数
+
+        for (int i = 0; i < stacks; ++i) {
+            float phi = (float) (Math.PI * i / stacks);
+            float nextPhi = (float) (Math.PI * (i + 1) / stacks);
+
+            for (int j = 0; j < sectors; ++j) {
+                float theta = (float) (2 * Math.PI * j / sectors);
+                float nextTheta = (float) (2 * Math.PI * (j + 1) / sectors);
+
+                // 当前面的四个顶点
+                float[][] points = new float[4][3];
+                points[0] = getSpherePoint(centerX, centerY, centerZ, radius, phi, theta);
+                points[1] = getSpherePoint(centerX, centerY, centerZ, radius, phi, nextTheta);
+                points[2] = getSpherePoint(centerX, centerY, centerZ, radius, nextPhi, nextTheta);
+                points[3] = getSpherePoint(centerX, centerY, centerZ, radius, nextPhi, theta);
+
+                // 将四边形分成两个三角形 - 使用逆时针顺序
+                float[] normal1 = calculateNormal(points[0][0], points[0][1], points[0][2],
+                        points[1][0], points[1][1], points[1][2],
+                        points[2][0], points[2][1], points[2][2]);
+
+                float[] normal2 = calculateNormal(points[0][0], points[0][1], points[0][2],
+                        points[2][0], points[2][1], points[2][2],
+                        points[3][0], points[3][1], points[3][2]);
+
+                // 第一个三角形 - 逆时针
+                addVertex(vertices, points[0][0], points[0][1], points[0][2], ElementType.Canopy, color, normal1);
+                addVertex(vertices, points[1][0], points[1][1], points[1][2], ElementType.Canopy, color, normal1);
+                addVertex(vertices, points[2][0], points[2][1], points[2][2], ElementType.Canopy, color, normal1);
+
+                // 第二个三角形 - 逆时针
+                addVertex(vertices, points[0][0], points[0][1], points[0][2], ElementType.Canopy, color, normal2);
+                addVertex(vertices, points[2][0], points[2][1], points[2][2], ElementType.Canopy, color, normal2);
+                addVertex(vertices, points[3][0], points[3][1], points[3][2], ElementType.Canopy, color, normal2);
+            }
+        }
     }
 
     private static float[] getSpherePoint(float centerX, float centerY, float centerZ,
