@@ -3,7 +3,9 @@ package com.example.gl;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class TerrainData {
@@ -32,6 +34,9 @@ public class TerrainData {
             this.type = type;
             this.u = u;
             this.v = v;
+            this.nx = 0.0f;
+            this.ny = 1.0f; // 默认朝上的法线
+            this.nz = 0.0f;
         }
     }
 
@@ -44,6 +49,121 @@ public class TerrainData {
         public int vertexCount;
         public float minHeight;
         public float maxHeight;
+    }
+
+    // 平滑法线计算的核心方法
+    private static void calculateSmoothNormals(List<Vertex> vertices) {
+        // 使用更精确的键来识别相同位置的顶点
+        Map<String, List<Integer>> positionMap = new HashMap<>();
+
+        // 第一遍：收集所有相同位置的顶点索引
+        for (int i = 0; i < vertices.size(); i++) {
+            Vertex vertex = vertices.get(i);
+            // 使用更精确的键，考虑浮点精度问题
+            String key = String.format("%.4f,%.4f,%.4f", vertex.x, vertex.y, vertex.z);
+
+            if (!positionMap.containsKey(key)) {
+                positionMap.put(key, new ArrayList<>());
+            }
+            positionMap.get(key).add(i);
+        }
+
+        // 第二遍：为每个三角形计算面法线并累加到共享顶点
+        Map<String, float[]> normalAccumulator = new HashMap<>();
+        Map<String, Integer> normalCount = new HashMap<>();
+
+        for (int i = 0; i < vertices.size(); i += 3) {
+            if (i + 2 >= vertices.size()) break;
+
+            Vertex v1 = vertices.get(i);
+            Vertex v2 = vertices.get(i + 1);
+            Vertex v3 = vertices.get(i + 2);
+
+            // 计算三角形面法线
+            float[] faceNormal = calculateFaceNormal(v1, v2, v3);
+
+            // 为这个三角形的三个顶点累加法线
+            accumulateVertexNormal(normalAccumulator, normalCount, v1, faceNormal);
+            accumulateVertexNormal(normalAccumulator, normalCount, v2, faceNormal);
+            accumulateVertexNormal(normalAccumulator, normalCount, v3, faceNormal);
+        }
+
+        // 第三遍：应用平均法线到所有共享顶点
+        for (Map.Entry<String, List<Integer>> entry : positionMap.entrySet()) {
+            String key = entry.getKey();
+            List<Integer> indices = entry.getValue();
+
+            float[] accumulatedNormal = normalAccumulator.get(key);
+            Integer count = normalCount.get(key);
+
+            if (accumulatedNormal != null && count != null && count > 0) {
+                // 计算平均法线
+                float nx = accumulatedNormal[0] / count;
+                float ny = accumulatedNormal[1] / count;
+                float nz = accumulatedNormal[2] / count;
+
+                // 归一化
+                float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+                if (length > 0.0001f) {
+                    nx /= length;
+                    ny /= length;
+                    nz /= length;
+                }
+
+                // 应用到所有共享这个位置的顶点
+                for (int index : indices) {
+                    Vertex vertex = vertices.get(index);
+                    vertex.nx = nx;
+                    vertex.ny = ny;
+                    vertex.nz = nz;
+                }
+            }
+        }
+    }
+
+    // 计算三角形面法线
+    private static float[] calculateFaceNormal(Vertex v1, Vertex v2, Vertex v3) {
+        // 计算两个边向量
+        float ux = v2.x - v1.x;
+        float uy = v2.y - v1.y;
+        float uz = v2.z - v1.z;
+
+        float vx = v3.x - v1.x;
+        float vy = v3.y - v1.y;
+        float vz = v3.z - v1.z;
+
+        // 计算叉积得到法线
+        float nx = uy * vz - uz * vy;
+        float ny = uz * vx - ux * vz;
+        float nz = ux * vy - uy * vx;
+
+        // 归一化
+        float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        if (length > 0.0001f) {
+            nx /= length;
+            ny /= length;
+            nz /= length;
+        }
+
+        return new float[]{nx, ny, nz};
+    }
+
+    // 累加顶点法线
+    private static void accumulateVertexNormal(Map<String, float[]> accumulator,
+                                               Map<String, Integer> count,
+                                               Vertex vertex, float[] normal) {
+        String key = String.format("%.4f,%.4f,%.4f", vertex.x, vertex.y, vertex.z);
+
+        if (!accumulator.containsKey(key)) {
+            accumulator.put(key, new float[]{0.0f, 0.0f, 0.0f});
+            count.put(key, 0);
+        }
+
+        float[] acc = accumulator.get(key);
+        acc[0] += normal[0];
+        acc[1] += normal[1];
+        acc[2] += normal[2];
+        count.put(key, count.get(key) + 1);
     }
 
     public static MeshData generateTerrainMesh() {
@@ -109,6 +229,9 @@ public class TerrainData {
 
         // 添加详细建筑物
         addDetailedBuildings(vertexList, heightMap, typeMap);
+
+        // 关键修改：在创建网格数据前计算平滑法线
+        calculateSmoothNormals(vertexList);
 
         // 转换为FloatBuffer
         return createMeshData(vertexList, minHeight, maxHeight);
