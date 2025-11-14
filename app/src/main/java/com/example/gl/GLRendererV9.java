@@ -131,7 +131,8 @@ public class GLRendererV9 implements GLSurfaceView.Renderer {
 
 
         // 加载TIFF
-        tiffBitmap = ManualTIFFParser.parseTIFFToBitmap(context, R.raw.adapt_20251114_102916);
+        ManualTIFFParser.TIFFParseResult result = ManualTIFFParser.parseTIFFToBitmap(context, R.raw.adapt_20251114_102916);
+        tiffBitmap = result.bitmap;
 
         // 转换为灰度高度图
         if (tiffBitmap != null) {

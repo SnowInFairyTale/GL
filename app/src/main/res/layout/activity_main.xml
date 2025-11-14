@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="30dp"
+    android:padding="20dp"
     tools:context=".TerrainGLActivity">
 
     <Button
@@ -17,21 +17,21 @@
         android:id="@+id/zy_bt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="5dp"
         android:text="自由视角" />
 
     <Button
         android:id="@+id/combine_bt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="5dp"
         android:text="Combine" />
 
     <Button
         android:id="@+id/height_map_bt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="5dp"
         android:text="高度图" />
 
 
@@ -39,22 +39,30 @@
         android:id="@+id/combine_v2_bt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="5dp"
         android:text="CombineV2" />
 
     <Button
         android:id="@+id/combine_v4_bt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="5dp"
         android:text="CombineV4" />
 
 
     <ImageView
         android:id="@+id/iv_tiff_image_view"
-        android:layout_width="400dp"
-        android:layout_height="400dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="top|left"
         android:background="#ffff0000" />
+
+    <Button
+        android:id="@+id/combine_v5_bt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="CombineV5" />
 
 
 </LinearLayout>
