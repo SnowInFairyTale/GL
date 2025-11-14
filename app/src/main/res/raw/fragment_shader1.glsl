@@ -12,6 +12,7 @@ in vec2 vTexCoord;
 uniform vec3 uLightPosition;
 uniform vec3 uCameraPosition;
 uniform sampler2D uTerrainTexture;  // 添加纹理uniform
+uniform int uUseTexture;
 uniform float minHeight;
 uniform float maxHeight;
 
@@ -20,7 +21,7 @@ out vec4 fragColor;
 // 平滑的高度到颜色转换函数 - 浅绿到深绿渐变
 vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
     if (height <= 0.0) {
-        return vec3(1.0,1.0,1.0);
+        return vec3(1.0, 1.0, 1.0);
     }
     // 归一化高度到 [0, 1] 范围
     float normalizedHeight = clamp((height - minHeight) / (maxHeight - minHeight), 0.0, 1.0);
@@ -59,7 +60,16 @@ void main() {
     float materialSpecular = 0.2;
 
     // 使用纹理颜色作为基础颜色，或者与高度颜色混合
-    vec3 baseColor = texColor.rgb;  // 直接使用纹理颜色
+    vec3 baseColor;
+    if (uUseTexture == 1) {
+        baseColor= texColor.rgb;// 直接使用纹理颜色
+    } else {
+        baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
+    }
+    if (texColor.a < 0.1) {
+        // 这里边缘效果不好
+        baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
+    }
     // 或者与高度颜色混合：vec3 baseColor = mix(texColor.rgb, smoothHeightToColor(vHeight, minHeight, maxHeight), 0.5);
 
     // 最终光照计算

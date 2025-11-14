@@ -21,6 +21,7 @@ public class GLTools {
         Bitmap bitmap = null;
         try {
             bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId);
+            bitmap = BitmapUtils.rotateAndFlip(bitmap, 180, false, true);
             if (bitmap == null) {
                 Log.e("GLRenderer", "Failed to decode texture resource: " + resourceId);
                 GLES30.glDeleteTextures(1, textureHandle, 0);

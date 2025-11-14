@@ -27,11 +27,13 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
 
     // 纹理相关变量
     private int texCoordHandle;
-    private int wallTextureHandle;
-    private int roofTextureHandle;
+//    private int wallTextureHandle;
+//    private int roofTextureHandle;
+    private int terrainTextureHandle;
     private int useTextureHandle;
-    private int wallTextureId;
-    private int roofTextureId;
+//    private int wallTextureId;
+//    private int roofTextureId;
+    private int terrainTextureId;
 
     private RealTerrainData.MeshData meshData;
 
@@ -292,16 +294,17 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
     // 加载纹理
     private void loadTextures() {
         // 加载墙体纹理
-        wallTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
+//        wallTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
         // 加载屋顶纹理
-        roofTextureId = GLTools.loadTexture(context, R.drawable.roof_texture);
+//        roofTextureId = GLTools.loadTexture(context, R.drawable.roof_texture);
+        terrainTextureId = GLTools.loadTexture(context, R.drawable.adpt);
 
         // 如果纹理加载失败，使用默认颜色
-        if (wallTextureId == 0 || roofTextureId == 0) {
-            Log.e("GLRenderer", "Failed to load textures, using default colors");
-        } else {
-            Log.i("GLRenderer", "Textures loaded successfully");
-        }
+//        if (wallTextureId == 0 || roofTextureId == 0) {
+//            Log.e("GLRenderer", "Failed to load textures, using default colors");
+//        } else {
+//            Log.i("GLRenderer", "Textures loaded successfully");
+//        }
     }
 
     private void setupSolidShaderAttributes() {
@@ -318,15 +321,17 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
 
         // 纹理相关属性
         texCoordHandle = GLES30.glGetAttribLocation(program, "aTexCoord");
-        wallTextureHandle = GLES30.glGetUniformLocation(program, "uWallTexture");
-        roofTextureHandle = GLES30.glGetUniformLocation(program, "uRoofTexture");
+//        wallTextureHandle = GLES30.glGetUniformLocation(program, "uWallTexture");
+//        roofTextureHandle = GLES30.glGetUniformLocation(program, "uRoofTexture");
         useTextureHandle = GLES30.glGetUniformLocation(program, "uUseTexture");
+        terrainTextureHandle = GLES30.glGetUniformLocation(program, "uTerrainTexture");
 
         // 检查是否获取成功
         if (texCoordHandle == -1) Log.w("GLRenderer", "aTexCoord attribute not found");
-        if (wallTextureHandle == -1) Log.w("GLRenderer", "uWallTexture uniform not found");
-        if (roofTextureHandle == -1) Log.w("GLRenderer", "uRoofTexture uniform not found");
+//        if (wallTextureHandle == -1) Log.w("GLRenderer", "uWallTexture uniform not found");
+//        if (roofTextureHandle == -1) Log.w("GLRenderer", "uRoofTexture uniform not found");
         if (useTextureHandle == -1) Log.w("GLRenderer", "uUseTexture uniform not found");
+        if (terrainTextureHandle == -1) Log.w("GLRenderer", "terrainTextureHandle uniform not found");
     }
 
     @Override
@@ -455,17 +460,23 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
         }
 
         // 绑定墙体纹理到纹理单元0
-        if (wallTextureHandle != -1 && wallTextureId != 0) {
-            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, wallTextureId);
-            GLES30.glUniform1i(wallTextureHandle, 0);
-        }
+//        if (wallTextureHandle != -1 && wallTextureId != 0) {
+//            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+//            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, wallTextureId);
+//            GLES30.glUniform1i(wallTextureHandle, 0);
+//        }
 
         // 绑定屋顶纹理到纹理单元1
-        if (roofTextureHandle != -1 && roofTextureId != 0) {
-            GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, roofTextureId);
-            GLES30.glUniform1i(roofTextureHandle, 1);
+//        if (roofTextureHandle != -1 && roofTextureId != 0) {
+//            GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+//            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, roofTextureId);
+//            GLES30.glUniform1i(roofTextureHandle, 1);
+//        }
+
+        if (terrainTextureHandle != -1 && terrainTextureId != 0) {
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, terrainTextureId);
+            GLES30.glUniform1i(terrainTextureHandle, 0);
         }
 
         // 传递顶点数据
