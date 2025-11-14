@@ -37,5 +37,9 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(MainActivity.this, HeightMapRenderActivity.class);
             startActivity(intent);
         });
+        findViewById(R.id.combine_v4_bt).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, GLV4Activity.class);
+            startActivity(intent);
+        });
     }
 }

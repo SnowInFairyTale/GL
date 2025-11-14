@@ -17,7 +17,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class GLRendererV4 implements GLSurfaceView.Renderer {
-    private static final String TAG = "GLRendererV2";
+    private static final String TAG = "GLRendererV4";
     private Context context;
 
     // 着色器程序

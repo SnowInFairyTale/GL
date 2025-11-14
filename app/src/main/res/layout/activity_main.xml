@@ -41,5 +41,12 @@
         android:layout_marginTop="20dp"
         android:text="CombineV2" />
 
+    <Button
+        android:id="@+id/combine_v4_bt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="CombineV4" />
+
 
 </LinearLayout>
