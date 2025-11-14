@@ -23,7 +23,7 @@ highp float sampleHeightMap(mediump vec2 uv) {
     // 从高度图采样高度
     highp float height = texture(uHeightMap, uv).r;
     // 将[0,1]范围映射到实际高度范围
-    return height * 20.0 - 10.0;
+    return (1.0 - height) * 10.0;
 }
 
 // 计算法线
@@ -44,24 +44,26 @@ highp vec3 calculateNormal(mediump vec2 uv) {
 }
 
 // 根据高度计算颜色
-mediump vec3 calculateTerrainColor(highp float height, highp vec3 normal) {
-    // 定义颜色关键点
-    mediump vec3 deepWater = vec3(0.0, 0.2, 0.6);
-    mediump vec3 shallowWater = vec3(0.0, 0.4, 0.8);
-    mediump vec3 sand = vec3(0.76, 0.7, 0.5);
-    mediump vec3 grass = vec3(0.2, 0.6, 0.2);
-    mediump vec3 forest = vec3(0.1, 0.4, 0.1);
-    mediump vec3 rock = vec3(0.5, 0.5, 0.5);
-    mediump vec3 snow = vec3(0.9, 0.9, 0.9);
-
-    // 基于高度的颜色混合
-    if (height < -2.0) return deepWater;
-    else if (height < 0.0) return mix(deepWater, shallowWater, (height + 2.0) / 2.0);
-    else if (height < 1.0) return mix(shallowWater, sand, height);
-    else if (height < 3.0) return mix(sand, grass, (height - 1.0) / 2.0);
-    else if (height < 6.0) return mix(grass, forest, (height - 3.0) / 3.0);
-    else if (height < 8.0) return mix(forest, rock, (height - 6.0) / 2.0);
-    else return mix(rock, snow, (height - 8.0) / 2.0);
+mediump vec3 calculateTerrainColor(highp float height, highp vec3 normal, mediump vec2 uv) {
+//    // 定义颜色关键点
+//    mediump vec3 deepWater = vec3(0.0, 0.2, 0.6);
+//    mediump vec3 shallowWater = vec3(0.0, 0.4, 0.8);
+//    mediump vec3 sand = vec3(0.76, 0.7, 0.5);
+//    mediump vec3 grass = vec3(0.2, 0.6, 0.2);
+//    mediump vec3 forest = vec3(0.1, 0.4, 0.1);
+//    mediump vec3 rock = vec3(0.5, 0.5, 0.5);
+//    mediump vec3 snow = vec3(0.9, 0.9, 0.9);
+//
+//    // 基于高度的颜色混合
+//    if (height < -2.0) return deepWater;
+//    else if (height < 0.0) return mix(deepWater, shallowWater, (height + 2.0) / 2.0);
+//    else if (height < 1.0) return mix(shallowWater, sand, height);
+//    else if (height < 3.0) return mix(sand, grass, (height - 1.0) / 2.0);
+//    else if (height < 6.0) return mix(grass, forest, (height - 3.0) / 3.0);
+//    else if (height < 8.0) return mix(forest, rock, (height - 6.0) / 2.0);
+//    else return mix(rock, snow, (height - 8.0) / 2.0);
+    vec4 texColor = texture(uHeightMap, uv);
+    return texColor.rgb;
 }
 
 void main() {
@@ -86,7 +88,7 @@ void main() {
     vNormal = calculateNormal(terrainUV);
 
     // 计算颜色
-    vColor = calculateTerrainColor(height, vNormal);
+    vColor = calculateTerrainColor(height, vNormal, terrainUV);
 
     // 传递其他属性
     vTexCoord = terrainUV;

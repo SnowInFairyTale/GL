@@ -318,8 +318,9 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         loadTextures();
 
         // 生成高度图纹理
-        if (TerrainDataV2.isTessellationEnabled()) {
-            heightMapTextureId = TerrainDataV2.generateHeightMapTexture();
+        if (true) {
+//            heightMapTextureId = TerrainDataV2.generateHeightMapTexture();
+            heightMapTextureId = GLTools.loadTexture(context, R.drawable.sz);
             Log.i(TAG, "Height map texture generated: " + heightMapTextureId);
         }
     }
@@ -481,6 +482,7 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         float camX = (float) (Math.sin(angle * 0.01f) * radius);
         float camZ = (float) (Math.cos(angle * 0.01f) * radius);
         cameraPosition[0] = camX;
+//        cameraPosition[1] = 160.0f;
         cameraPosition[1] = 40.0f;
         cameraPosition[2] = camZ;
 
@@ -677,7 +679,6 @@ public class GLRendererV2 implements GLSurfaceView.Renderer {
         GLES32.glDrawArrays(GLES32.GL_PATCHES, 0, meshData.vertexCount);
 
         GLES32.glDisableVertexAttribArray(tessPositionHandle);
-        Log.e("csdcdscdscdscds","akssajqj");
     }
 
     private void disableVertexArrays() {
