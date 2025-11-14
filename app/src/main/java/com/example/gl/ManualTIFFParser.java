@@ -30,6 +30,18 @@ public class ManualTIFFParser {
         public int height;
         public float minValue = Float.MAX_VALUE;
         public float maxValue = Float.MIN_VALUE;
+
+        @Override
+        public String toString() {
+            return "TIFFParseResult{" +
+                    "bitmap=" + bitmap +
+                    ", heightData=" + heightData.length +
+                    ", width=" + width +
+                    ", height=" + height +
+                    ", minValue=" + minValue +
+                    ", maxValue=" + maxValue +
+                    '}';
+        }
     }
 
     public static TIFFParseResult parseTIFFToBitmapAndData(Context context, int resourceId) {
@@ -45,9 +57,9 @@ public class ManualTIFFParser {
     }
 
     // 保持原有方法兼容性
-    public static Bitmap parseTIFFToBitmap(Context context, int resourceId) {
+    public static TIFFParseResult parseTIFFToBitmap(Context context, int resourceId) {
         TIFFParseResult result = parseTIFFToBitmapAndData(context, resourceId);
-        return result != null ? result.bitmap : null;
+        return result;
     }
 
     private static byte[] readFully(InputStream inputStream) throws IOException {
