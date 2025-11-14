@@ -27,11 +27,17 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
     private int uHeightMapTextureId;
 
     // 简单的全屏四边形顶点（使用vec4，包含w分量）
+//    private static final float[] VERTICES = {
+//            -1.0f, -1.0f, 0.0f,  // 左下
+//            1.0f, -1.0f, 0.0f,   // 右下
+//            -1.0f, 1.0f, 0.0f,   // 左上
+//            1.0f, 1.0f, 0.0f     // 右上
+//    };
     private static final float[] VERTICES = {
-            -1.0f, -1.0f, 0.0f,  // 左下
-            1.0f, -1.0f, 0.0f,   // 右下
-            -1.0f, 1.0f, 0.0f,   // 左上
-            1.0f, 1.0f, 0.0f     // 右上
+            -1.0f, 1.0f, 0.0f,    // 左上 -> 右上
+            1.0f, 1.0f, 0.0f,     // 右上 -> 左上
+            -1.0f, -1.0f, 0.0f,   // 左下 -> 右下
+            1.0f, -1.0f, 0.0f     // 右下 -> 左下
     };
 
     private static final float[] TEX_COORDS = {
@@ -89,7 +95,7 @@ public class HeightMapDebugRenderer implements GLSurfaceView.Renderer {
 
     private void loadTextures() {
         // 加载屋顶纹理
-//        uHeightMapTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
+//        uHeightMapTextureId = GLTools.loadTexture(context, R.drawable.jz);
 
         TerrainDataV2.generateTerrainMesh();
         uHeightMapTextureId = TerrainDataV2.generateHeightMapTexture2();
