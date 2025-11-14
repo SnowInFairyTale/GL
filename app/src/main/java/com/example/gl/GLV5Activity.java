@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class GLV5Activity extends AppCompatActivity {
     private GLSurfaceView glSurfaceView;
-    private GLRenderer glRenderer;
+    private GLRenderer11 glRenderer;
     private TextView infoText;
     private View movementControls;
 
@@ -84,7 +84,7 @@ public class GLV5Activity extends AppCompatActivity {
     private void setupGLSurfaceView() {
         glSurfaceView = findViewById(R.id.glSurfaceView);
         glSurfaceView.setEGLContextClientVersion(3);
-        glRenderer = new GLRenderer(this);
+        glRenderer = new GLRenderer11(this);
         glSurfaceView.setRenderer(glRenderer);
         glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 

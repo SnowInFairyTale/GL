@@ -272,7 +272,7 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
 
         // 加载着色器
         String vertexShader = ShaderUtils.loadShader(context, R.raw.vertex_shader);
-        String fragmentShader = ShaderUtils.loadShader(context, R.raw.fragment_shader);
+        String fragmentShader = ShaderUtils.loadShader(context, R.raw.fragment_shader1);
         program = ShaderUtils.createProgram(vertexShader, fragmentShader);
 
         String wireframeVertexShader = ShaderUtils.loadShader(context, R.raw.wireframe_vertex_shader);

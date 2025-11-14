@@ -19,7 +19,7 @@ out vec4 fragColor;
 
 // 平滑的高度到颜色转换函数 - 浅绿到深绿渐变
 vec3 smoothHeightToColor(float height, float minHeight, float maxHeight) {
-    if(height<=0.0){
+    if (height <= 0.0) {
         return vec3(1.0,1.0,1.0);
     }
     // 归一化高度到 [0, 1] 范围
