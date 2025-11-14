@@ -99,7 +99,7 @@ public class GLRendererV4 implements GLSurfaceView.Renderer {
     private int heightMapHeight;
     private float maxHeight = 20.0f; // 最大高度
 
-    public GLRendererV2(Context context) {
+    public GLRendererV4(Context context) {
         this.context = context;
 
         // 加载高度图Bitmap
