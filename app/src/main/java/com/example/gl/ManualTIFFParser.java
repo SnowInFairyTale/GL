@@ -22,7 +22,17 @@ public class ManualTIFFParser {
     private static final int TAG_ROWS_PER_STRIP = 278;
     private static final int TAG_STRIP_BYTE_COUNTS = 279;
 
-    public static Bitmap parseTIFFToBitmap(Context context, int resourceId) {
+    // 解析结果容器
+    public static class TIFFParseResult {
+        public Bitmap bitmap;
+        public float[][] heightData; // 原始32位浮点数据
+        public int width;
+        public int height;
+        public float minValue = Float.MAX_VALUE;
+        public float maxValue = Float.MIN_VALUE;
+    }
+
+    public static TIFFParseResult parseTIFFToBitmapAndData(Context context, int resourceId) {
         try {
             InputStream inputStream = context.getResources().openRawResource(resourceId);
             byte[] tiffData = readFully(inputStream);
@@ -32,6 +42,12 @@ public class ManualTIFFParser {
             Log.e(TAG, "Error parsing TIFF", e);
             return null;
         }
+    }
+
+    // 保持原有方法兼容性
+    public static Bitmap parseTIFFToBitmap(Context context, int resourceId) {
+        TIFFParseResult result = parseTIFFToBitmapAndData(context, resourceId);
+        return result != null ? result.bitmap : null;
     }
 
     private static byte[] readFully(InputStream inputStream) throws IOException {
@@ -44,7 +60,7 @@ public class ManualTIFFParser {
         return buffer.toByteArray();
     }
 
-    private static Bitmap parseTIFFData(byte[] data) {
+    private static TIFFParseResult parseTIFFData(byte[] data) {
         if (data.length < 8) {
             Log.e(TAG, "TIFF file too small");
             return null;
@@ -74,8 +90,13 @@ public class ManualTIFFParser {
         Log.i(TAG, String.format("TIFF Info: %dx%d, %d bits, %d samples",
                 tiffInfo.width, tiffInfo.height, tiffInfo.bitsPerSample, tiffInfo.samplesPerPixel));
 
-        // 读取图像数据
-        return readImageData(data, tiffInfo, isLittleEndian);
+        // 检查是否为32位数据
+        if (tiffInfo.bitsPerSample != 32) {
+            Log.w(TAG, "Not 32-bit TIFF, bits per sample: " + tiffInfo.bitsPerSample);
+        }
+
+        // 读取图像数据和原始浮点数据
+        return readImageDataAndHeight(data, tiffInfo, isLittleEndian);
     }
 
     private static TIFFInfo parseIFD(byte[] data, int ifdOffset, boolean isLittleEndian) {
@@ -139,13 +160,21 @@ public class ManualTIFFParser {
         return info;
     }
 
-    private static Bitmap readImageData(byte[] data, TIFFInfo info, boolean isLittleEndian) {
+    private static TIFFParseResult readImageDataAndHeight(byte[] data, TIFFInfo info, boolean isLittleEndian) {
         if (info.stripOffsets == null || info.stripOffsets.length == 0) {
             Log.e(TAG, "No strip offsets found");
             return null;
         }
 
         int dataOffset = (int) info.stripOffsets[0];
+
+        // 创建结果对象
+        TIFFParseResult result = new TIFFParseResult();
+        result.width = info.width;
+        result.height = info.height;
+
+        // 初始化高度数据数组
+        result.heightData = new float[info.height][info.width];
         Bitmap bitmap = Bitmap.createBitmap(info.width, info.height, Bitmap.Config.ARGB_8888);
         int[] pixels = new int[info.width * info.height];
 
@@ -154,27 +183,44 @@ public class ManualTIFFParser {
         for (int y = 0; y < info.height; y++) {
             for (int x = 0; x < info.width; x++) {
                 if (dataOffset + 3 >= data.length) {
+                    Log.w(TAG, "Reached end of data at position: " + dataOffset);
                     break;
                 }
 
                 if (info.bitsPerSample == 32) {
-                    // 32位浮点数
+                    // 读取32位浮点数
                     int intValue = readInt(data, dataOffset, isLittleEndian);
                     float floatValue = Float.intBitsToFloat(intValue);
+
+                    // 存储原始浮点数据
+                    result.heightData[y][x] = floatValue;
+
+                    // 更新最小最大值
+                    if (floatValue < result.minValue) result.minValue = floatValue;
+                    if (floatValue > result.maxValue) result.maxValue = floatValue;
+
+                    // 转换为ARGB用于Bitmap显示
                     pixels[pixelIndex] = convertFloatToARGB(floatValue);
                     dataOffset += 4;
+
                 } else if (info.bitsPerSample == 16) {
                     // 16位数据
                     int value = readShort(data, dataOffset, isLittleEndian) & 0xFFFF;
+                    float floatValue = value / 65535.0f; // 归一化到0-1
+                    result.heightData[y][x] = floatValue;
                     pixels[pixelIndex] = convert16BitToARGB(value);
                     dataOffset += 2;
+
                 } else if (info.bitsPerSample == 8) {
                     // 8位数据
                     int value = data[dataOffset] & 0xFF;
+                    float floatValue = value / 255.0f; // 归一化到0-1
+                    result.heightData[y][x] = floatValue;
                     pixels[pixelIndex] = convert8BitToARGB(value);
                     dataOffset += 1;
                 } else {
                     // 默认处理
+                    result.heightData[y][x] = 0f;
                     pixels[pixelIndex] = 0xFF000000;
                     dataOffset += info.bitsPerSample / 8;
                 }
@@ -184,7 +230,15 @@ public class ManualTIFFParser {
         }
 
         bitmap.setPixels(pixels, 0, info.width, 0, 0, info.width, info.height);
-        return bitmap;
+        result.bitmap = bitmap;
+
+        // 记录数据统计信息
+        Log.i(TAG, String.format("Height data range: %.6f to %.6f",
+                result.minValue, result.maxValue));
+        Log.i(TAG, String.format("Height data dimensions: %dx%d",
+                result.heightData[0].length, result.heightData.length));
+
+        return result;
     }
 
     // 读取工具方法
@@ -244,7 +298,10 @@ public class ManualTIFFParser {
     // 像素转换方法
     private static int convertFloatToARGB(float value) {
         // 将浮点数转换为灰度
-        int intensity = (int) (clamp(value, 0, 1) * 255);
+        // 使用自动范围调整，避免硬编码的0-1范围
+        float normalized = (value + 1.0f) / 2.0f; // 假设数据在-1到1之间
+        normalized = clamp(normalized, 0.0f, 1.0f);
+        int intensity = (int) (normalized * 255);
         return 0xFF000000 | (intensity << 16) | (intensity << 8) | intensity;
     }
 
