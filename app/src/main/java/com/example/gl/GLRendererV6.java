@@ -438,5 +438,6 @@ public class GLRendererV6 implements GLSurfaceView.Renderer {
     }
 
     public String getCurrentModeName() {
+        return "unknow";
     }
 }
