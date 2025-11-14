@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
@@ -51,8 +52,49 @@ public class MainActivity extends Activity {
                 Bitmap bitmap = TiffBitmapFactoryConverter.convert32BitTIFF(getApplication(), R.raw.adapt_20251114_102916);
                 runOnUiThread(() -> imageView.setImageBitmap(bitmap));
 
-                Bitmap bitmap11 = ManualTIFFParser.parseTIFFToBitmap(getApplication(), R.raw.adapt_20251114_102916);
-                runOnUiThread(() -> imageView.setImageBitmap(bitmap11));
+                ManualTIFFParser.TIFFParseResult result = ManualTIFFParser.parseTIFFToBitmap(getApplication(), R.raw.adapt_20251114_102916);
+                String adptPath = FloatArrayExporter.exportToCacheFile(getApplication(), result.heightData, "adpt.txt");
+                float[][] heightData = result.heightData;
+
+                int width = heightData.length;
+                int height = heightData[0].length;
+
+                float minHeight = Float.MAX_VALUE;
+                float maxHeight = Float.MIN_VALUE;
+
+                float[][] dHeightData = new float[width][height];
+                for (int i = 0; i < width; i++) {
+                    for (int j = 0; j < height; j++) {
+                        float v = heightData[i][j];
+                        float h;
+                        if (Float.isNaN(v)) {
+                            h = 0;
+                        } else {
+                            h = (v + 2.41f);
+                        }
+                        dHeightData[i][j] = h;
+
+                        minHeight = Math.min(minHeight, h);
+                        maxHeight = Math.max(maxHeight, h);
+                    }
+                }
+
+                ManualTIFFParser.TIFFParseResult dResult = new ManualTIFFParser.TIFFParseResult();
+                dResult.minValue = minHeight;
+                dResult.maxValue = maxHeight;
+                dResult.heightData = dHeightData;
+                dResult.width = width;
+                dResult.heightData = heightData;
+
+                RealTerrainData.MeshData meshData = RealTerrainData.generateTerrainMeshFromHeightData(dHeightData);
+                TIFFParseResultData.result = dResult;
+                TIFFParseResultData.meshData = meshData;
+
+                String adpt2Path = FloatArrayExporter.exportToCacheFile(getApplication(), dHeightData, "adpt2.txt");
+
+                runOnUiThread(() -> imageView.setImageBitmap(result.bitmap));
+                Log.e("TIFFParseResult", "result " + result + ",adptPath " + adptPath);
+                Log.e("TIFFParseResult", "dResult " + dResult + ",adpt2Path " + adpt2Path);
             }
         }.start();
     }
