@@ -2,6 +2,8 @@
 
 buildscript {
     repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }  // 添加这一行
         // 阿里云镜像
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/jcenter' }
@@ -20,6 +22,8 @@ buildscript {
 
 allprojects {
     repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }  // 添加这一行
         // 阿里云镜像
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/jcenter' }

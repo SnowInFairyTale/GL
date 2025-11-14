@@ -60,15 +60,15 @@ void main() {
     mediump vec3 finalColor = applyFog(litColor, vWorldPosition, uCameraPosition);
 
     // 水面特殊处理
-    if (vHeight < 0.0) {
-        // 添加水面波动效果
-        mediump float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.02;
-        finalColor += vec3(0.1, 0.1, 0.2) * wave;
-
-        // 水面更亮
-        finalColor *= 1.2;
-    }
+//    if (vHeight < 0.0) {
+//        // 添加水面波动效果
+//        mediump float wave = sin(vWorldPosition.x * 3.0 + vWorldPosition.z * 2.0) * 0.02;
+//        finalColor += vec3(0.1, 0.1, 0.2) * wave;
+//
+//        // 水面更亮
+//        finalColor *= 1.2;
+//    }
 
     // 输出最终颜色
-    fragColor = vec4(vColor, 1.0);
+    fragColor = vec4(finalColor, 1.0);
 }

@@ -30,6 +30,7 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
     private int tessModelMatrixHandle;
     private int tessTessLevelHandle;
     private int tessHeightMapHandle;
+    private int terrainSizeHandle;
     private int tessTerrainSizeHandle;
     private int tessCameraPositionHandle;
     private int tessLightPositionHandle;
@@ -40,6 +41,8 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
 
     // 纹理
     private int heightMapTextureId;
+
+    private final TerrainDataV2.MeshData meshData;
 
     // 线框数据
     private FloatBuffer wireframeVerticesBuffer;
@@ -67,7 +70,7 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
 
     // 控制状态（保持不变）
     private boolean isFirstPersonView = false;
-    private boolean isAutoRotating = true;
+    private boolean isAutoRotating = false;
     private boolean isRotating = false;
     private float previousX, previousY;
 
@@ -102,18 +105,45 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
     public GLRendererV8(Context context) {
         this.context = context;
 
+        // 配置高级地形特性
+        configureAdvancedFeatures();
+
+        // 生成地形网格
+        meshData = TerrainDataV2.generateTerrainMesh();
+
         // 加载高度图Bitmap
-        loadHeightMapBitmap();
+//        loadHeightMapBitmap();
 
         // 从高度图生成线框数据
-        generateWireframeFromHeightMap();
+//        generateWireframeFromHeightMap();
 
         // 初始化位置
         fpvPosition[0] = 0.0f;
-        fpvPosition[1] = getHeightFromBitmap(0, 0) + 2.0f;
+//        fpvPosition[1] = getHeightFromBitmap(0, 0) + 2.0f;
+        fpvPosition[1] = getTerrainHeight(0, 0) + 2.0f;
         fpvPosition[2] = 0.0f;
 
         lastFpsTime = System.currentTimeMillis();
+    }
+
+    private void configureAdvancedFeatures() {
+        // 根据设备能力配置特性
+        if (GLSupportChecker.supportsTessellation()) {
+            TerrainDataV2.setEnableTessellation(true);
+            TerrainDataV2.setTessellationLevel(6); // 中等细分级别
+            Log.i(TAG, "Tessellation enabled with level: " + TerrainDataV2.getTessellationLevel());
+        } else {
+            TerrainDataV2.setEnableTessellation(false);
+            Log.i(TAG, "Tessellation not supported, using standard rendering");
+        }
+
+        TerrainDataV2.setUseInterpolation(true);
+        TerrainDataV2.setEnableNormalMapping(true);
+    }
+
+    private float getTerrainHeight(float worldX, float worldZ) {
+        return (float) (Math.sin(worldX * 0.1) * Math.cos(worldZ * 0.1) * 3.0f +
+                Math.sin(worldX * 0.05) * Math.cos(worldZ * 0.03) * 2.0f);
     }
 
     private void loadHeightMapBitmap() {
@@ -208,11 +238,11 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         Log.i(TAG, "Surface created with OpenGL ES 3.2 support");
 
-        GLES32.glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // 深色背景便于观察线框
+        GLES32.glClearColor(0.6f, 0.8f, 1.0f, 1.0f);
         GLES32.glEnable(GLES32.GL_DEPTH_TEST);
 
         // 加载着色器
-        loadWireframeShaders();
+//        loadWireframeShaders();
         if (GLSupportChecker.supportsTessellation()) {
             loadTessellationShaders();
         }
@@ -222,7 +252,7 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
         Log.i(TAG, "Height map texture loaded: " + heightMapTextureId);
 
         // 创建线框缓冲区
-        createWireframeBuffers();
+//        createWireframeBuffers();
     }
 
     private void loadWireframeShaders() {
@@ -266,6 +296,7 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
                 tessModelMatrixHandle = GLES32.glGetUniformLocation(tessellationProgram, "uModelMatrix");
                 tessTessLevelHandle = GLES32.glGetUniformLocation(tessellationProgram, "uTessLevel");
                 tessHeightMapHandle = GLES32.glGetUniformLocation(tessellationProgram, "uHeightMap");
+                terrainSizeHandle = GLES32.glGetUniformLocation(tessellationProgram, "uTerrainSize");
                 tessTerrainSizeHandle = GLES32.glGetUniformLocation(tessellationProgram, "uTerrainSize");
                 tessCameraPositionHandle = GLES32.glGetUniformLocation(tessellationProgram, "uCameraPosition");
                 tessLightPositionHandle = GLES32.glGetUniformLocation(tessellationProgram, "uLightPosition");
@@ -367,7 +398,7 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
         float camX = (float) (Math.sin(angle * 0.01f) * radius);
         float camZ = (float) (Math.cos(angle * 0.01f) * radius);
         cameraPosition[0] = camX;
-        cameraPosition[1] = 40.0f;
+        cameraPosition[1] = 90.0f;
         cameraPosition[2] = camZ;
 
         Matrix.setLookAtM(viewMatrix, 0,
@@ -488,23 +519,27 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
 
         GLES32.glUniformMatrix4fv(tessMvpMatrixHandle, 1, false, mvpMatrix, 0);
         GLES32.glUniformMatrix4fv(tessModelMatrixHandle, 1, false, modelMatrix, 0);
-        GLES32.glUniform1f(tessTessLevelHandle, 8.0f); // 固定细分级别
-        GLES32.glUniform1f(tessTerrainSizeHandle, 100.0f);
+        GLES32.glUniform1f(tessTessLevelHandle, TerrainDataV2.getTessellationLevel()); // 固定细分级别
+        GLES32.glUniform1f(tessTerrainSizeHandle, TerrainDataV2.TERRAIN_SIZE);
         GLES32.glUniform3f(tessCameraPositionHandle, cameraPosition[0], cameraPosition[1], cameraPosition[2]);
         GLES32.glUniform3f(tessLightPositionHandle, lightPosition[0], lightPosition[1], lightPosition[2]);
 
         GLES32.glActiveTexture(GLES32.GL_TEXTURE0);
         GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, heightMapTextureId);
         GLES32.glUniform1i(tessHeightMapHandle, 0);
+        GLES32.glUniform1f(terrainSizeHandle, TerrainDataV2.TERRAIN_SIZE);
 
         // 使用线框数据作为细分的基础网格
         int tessPositionHandle = GLES32.glGetAttribLocation(tessellationProgram, "aPosition");
         GLES32.glEnableVertexAttribArray(tessPositionHandle);
+        meshData.vertices.position(0); // 重置buffer位置
+        GLES32.glVertexAttribPointer(tessPositionHandle, 3, GLES32.GL_FLOAT, false, 12, meshData.vertices);
 
-        GLES32.glBindVertexArray(wireframeVAO);
+//        GLES32.glBindVertexArray(wireframeVAO);
+        // 使用曲面细分绘制
         GLES32.glPatchParameteri(GLES32.GL_PATCH_VERTICES, 3);
-        GLES32.glDrawArrays(GLES32.GL_PATCHES, 0, wireframeVertexCount);
-        GLES32.glBindVertexArray(0);
+        GLES32.glDrawArrays(GLES32.GL_PATCHES, 0, meshData.vertexCount);
+//        GLES32.glBindVertexArray(0);
 
         GLES32.glDisableVertexAttribArray(tessPositionHandle);
     }
@@ -513,6 +548,24 @@ public class GLRendererV8 implements GLSurfaceView.Renderer {
     public void toggleViewMode() {
         isFirstPersonView = !isFirstPersonView;
         isAutoRotating = !isFirstPersonView;
+
+        if (isFirstPersonView) {
+            // 切换到第一人称时，重置相机角度
+//            fpvYaw = 0.0f;
+//            fpvPitch = 0.0f;
+
+            // 设置合理的第一人称初始位置
+            fpvPosition[0] = 0.0f;
+            fpvPosition[1] = 160.0f; // 人眼高度
+            fpvPosition[2] = 90.0f;
+
+            Log.d(TAG, "切换到第一人称视角，位置: " +
+                    fpvPosition[0] + ", " + fpvPosition[1] + ", " + fpvPosition[2]);
+        } else {
+            // 切换到上帝视角时，重置自动旋转
+            isAutoRotating = true;
+            Log.d(TAG, "切换到上帝视角");
+        }
     }
 
     public String getCurrentViewMode() {

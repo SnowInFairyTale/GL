@@ -23,6 +23,7 @@ highp float sampleHeightMap(mediump vec2 uv) {
     // 从高度图采样高度
     highp float height = texture(uHeightMap, uv).r;
     // 将[0,1]范围映射到实际高度范围
+//    return height;
     return (1.0 - height) * 10.0;
 }
 
@@ -63,7 +64,11 @@ mediump vec3 calculateTerrainColor(highp float height, highp vec3 normal, medium
 //    else if (height < 8.0) return mix(forest, rock, (height - 6.0) / 2.0);
 //    else return mix(rock, snow, (height - 8.0) / 2.0);
     vec4 texColor = texture(uHeightMap, uv);
-    return texColor.rgb;
+    if (texColor.a < 0.1) { // 根据您的需求调整阈值
+        return vec3(0.3, 0.2, 0.1); // 纯白色
+    } else {
+        return texColor.rgb;
+    }
 }
 
 void main() {

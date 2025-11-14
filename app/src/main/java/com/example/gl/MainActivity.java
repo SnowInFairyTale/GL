@@ -2,7 +2,9 @@ package com.example.gl;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 
@@ -41,5 +43,17 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(MainActivity.this, GLV4Activity.class);
             startActivity(intent);
         });
+
+        ImageView imageView = findViewById(R.id.iv_tiff_image_view);
+        new Thread() {
+            @Override
+            public void run() {
+                Bitmap bitmap = TiffBitmapFactoryConverter.convert32BitTIFF(getApplication(), R.raw.adapt_20251114_102916);
+                runOnUiThread(() -> imageView.setImageBitmap(bitmap));
+
+                Bitmap bitmap11 = ManualTIFFParser.parseTIFFToBitmap(getApplication(), R.raw.adapt_20251114_102916);
+                runOnUiThread(() -> imageView.setImageBitmap(bitmap11));
+            }
+        }.start();
     }
 }
