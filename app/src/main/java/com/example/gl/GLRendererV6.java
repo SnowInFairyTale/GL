@@ -430,4 +430,13 @@ public class GLRendererV6 implements GLSurfaceView.Renderer {
         }
         Log.i(TAG, "GLRendererV2 resources cleaned up");
     }
+
+    public void toggleViewMode() {
+    }
+
+    public void toggleRenderMode() {
+    }
+
+    public String getCurrentModeName() {
+    }
 }
