@@ -44,6 +44,7 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
 
     private float angle = 0;
     private float[] lightPosition = {50.0f, 80.0f, 50.0f};
+//    private float[] lightPosition = {0.0f, 80.0f, 0.0f};
     private float[] cameraPosition = {0.0f, 40.0f, 80.0f};
 
     // 动画相关

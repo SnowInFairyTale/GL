@@ -206,6 +206,18 @@ vec3 optimizeEdgeColor5(vec2 texCoord) {
     }
 }
 
+vec3 optimizeEdgeColor6(vec2 texCoord) {
+    vec4 texColor = texture(uTerrainTexture, texCoord);
+    vec3 stColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
+
+    // 完全不透明
+    if (texColor.a >= 0.98 && stColor.r < 1.0) {
+        return texColor.rgb;
+    } else {
+        return vec3(1.0, 1.0, 1.0);
+    }
+}
+
 void main() {
     // 归一化向量
     vec3 normal = normalize(vNormal);
