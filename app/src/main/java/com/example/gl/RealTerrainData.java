@@ -15,7 +15,7 @@ public class RealTerrainData {
     private static final String TAG = "RealTerrainData";
 
     // 地形配置
-    private static final float TERRAIN_SIZE = 100.0f;
+    public static final float TERRAIN_SIZE = 100.0f;
 
     // 顶点类
     public static class Vertex {

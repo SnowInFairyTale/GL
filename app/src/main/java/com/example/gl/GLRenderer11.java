@@ -297,7 +297,7 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
 //        wallTextureId = GLTools.loadTexture(context, R.drawable.wall_texture);
         // 加载屋顶纹理
 //        roofTextureId = GLTools.loadTexture(context, R.drawable.roof_texture);
-        terrainTextureId = GLTools.loadTexture(context, R.drawable.adpt);
+        terrainTextureId = GLTools.loadTexture(context, R.drawable.adpt4);
 
         // 如果纹理加载失败，使用默认颜色
 //        if (wallTextureId == 0 || roofTextureId == 0) {
@@ -494,6 +494,12 @@ public class GLRenderer11 implements GLSurfaceView.Renderer {
             GLES30.glEnableVertexAttribArray(texCoordHandle);
             GLES30.glVertexAttribPointer(texCoordHandle, 2, GLES30.GL_FLOAT, false, 8, meshData.texCoords);
         }
+
+        // 在uniform获取中添加
+//        int terrainSizeHandle = GLES32.glGetUniformLocation(program, "uTerrainSize");
+
+        // 在渲染时设置
+//        GLES32.glUniform1f(terrainSizeHandle, RealTerrainData.TERRAIN_SIZE);
 
         GLES30.glEnableVertexAttribArray(typeHandle);
         GLES30.glVertexAttribIPointer(typeHandle, 1, GLES30.GL_INT, 4, meshData.types);
