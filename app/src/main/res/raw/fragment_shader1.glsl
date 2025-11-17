@@ -174,6 +174,38 @@ vec3 optimizeEdgeColor(vec2 texCoord) {
 //    return texColor.rgb;
 }
 
+vec3 optimizeEdgeColor5(vec2 texCoord) {
+    vec4 texColor = texture(uTerrainTexture, texCoord);
+    vec3 stColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
+
+    // 完全不透明
+    if (texColor.a >= 0.98 && stColor.r < 1.0) {
+        return texColor.rgb;
+    }
+
+    if (stColor.r < 1.0) {
+        // 寻找周围不透明像素来直接替换
+        vec2 texelSize = 1.0 / vec2(textureSize(uTerrainTexture, 0));
+
+        // 采样附近区域寻找不透明像素
+        for (int x = -200; x <= 200; x = x + 20) {
+            for (int y = -200; y <= 200; y = y + 20) {
+                vec2 sampleCoord = texCoord + vec2(x, y) * texelSize;
+                sampleCoord = clamp(sampleCoord, 0.0, 1.0); // 边界保护
+                vec4 sampleColor = texture(uTerrainTexture, sampleCoord);
+
+                // 找到第一个不透明像素就直接使用它的颜色
+                if (sampleColor.a >= 0.9) {
+                    return sampleColor.rgb;
+                }
+            }
+        }
+        return stColor.rgb;
+    } else {
+        return stColor.rgb;
+    }
+}
+
 void main() {
     // 归一化向量
     vec3 normal = normalize(vNormal);
@@ -198,7 +230,7 @@ void main() {
     // 使用纹理颜色作为基础颜色，或者与高度颜色混合
     vec3 baseColor;
     if (uUseTexture == 1) {
-        baseColor = optimizeEdgeColor4(vTexCoord); // 使用优化后的边缘颜色
+        baseColor = optimizeEdgeColor5(vTexCoord); // 使用优化后的边缘颜色
     } else {
         baseColor = smoothHeightToColor(vHeight, minHeight, maxHeight);
     }
