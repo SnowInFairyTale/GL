@@ -71,7 +71,7 @@ public class HeightDataConverterSimple {
     private static void initializeWithNaN(float[][] array) {
         for (int i = 0; i < array.length; i++) {
             for (int j = 0; j < array[i].length; j++) {
-                array[i][j] = Float.NaN;
+                array[i][j] = 0.0f;
             }
         }
     }
