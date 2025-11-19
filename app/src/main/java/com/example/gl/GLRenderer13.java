@@ -355,7 +355,7 @@ public class GLRenderer13 implements GLSurfaceView.Renderer {
         float camX = (float) (Math.sin(angle * 0.01f) * radius);
         float camZ = (float) (Math.cos(angle * 0.01f) * radius);
         cameraPosition[0] = camX;
-        cameraPosition[1] = 40.0f;
+        cameraPosition[1] = 160.0f;
         cameraPosition[2] = camZ;
 
         Matrix.setLookAtM(viewMatrix, 0,
@@ -416,7 +416,7 @@ public class GLRenderer13 implements GLSurfaceView.Renderer {
 
         // 启用纹理
         if (useTextureHandle != -1) {
-            GLES30.glUniform1i(useTextureHandle, 1);
+            GLES30.glUniform1i(useTextureHandle, 0);
         }
 
         if (terrainTextureHandle != -1 && terrainTextureId != 0) {

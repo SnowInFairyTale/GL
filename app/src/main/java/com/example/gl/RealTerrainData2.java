@@ -96,8 +96,8 @@ public class RealTerrainData2 {
 
         int srcWidth = heightData.length;
         int srcHeight = heightData[0].length;
-        int meshWidth = 500;
-        int meshHeight = 500;
+        int meshWidth = 300;
+        int meshHeight = 300;
 
         Log.i(TAG, String.format("Generating terrain from real data: %dx%d -> %dx%d with interpolation",
                 srcWidth, srcHeight, meshWidth, meshHeight));
@@ -177,7 +177,7 @@ public class RealTerrainData2 {
         }
 
         // 计算法线
-        calculateNormals(vertexList);
+//        calculateNormals(vertexList);
 
         // 重新计算缩放后的高度范围
         float scaledMinHeight = minHeight * heightScale;
