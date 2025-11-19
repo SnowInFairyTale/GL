@@ -169,9 +169,9 @@ public class RealTerrainData2 {
                             effectiveMeshWidth, effectiveMeshHeight, srcWidth, srcHeight, heightScale);
                 } else {
                     // 在留白区域，高度为0
-                    addQuadFixed(vertexList, null,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                            meshWidth, meshHeight, i, j, false, heightScale);
+                    addQuadFixed(vertexList, heightData,
+                            meshWidth, meshHeight, i, j, offsetX, offsetZ,
+                            effectiveMeshWidth, effectiveMeshHeight, heightScale);
                 }
             }
         }
@@ -189,7 +189,7 @@ public class RealTerrainData2 {
     }
 
     /**
-     * 使用双线性插值的四边形添加方法
+     * 使用双线性插值的四边形添加方法（有效区域）
      */
     private static void addQuadWithInterpolation(List<Vertex> vertices, float[][] heightMap,
                                                  int meshWidth, int meshHeight, int meshI, int meshJ,
@@ -224,74 +224,82 @@ public class RealTerrainData2 {
         float z3 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
         float y3 = bilinearInterpolate(heightMap, srcX3, srcY3, heightScale);
 
+        // 计算纹理坐标 - 在有效区域内映射到[0,1]
+        float u0 = (float) (meshI - offsetX) / (effectiveMeshWidth - 1);
+        float v0 = (float) (meshJ - offsetZ) / (effectiveMeshHeight - 1);
+        float u1 = (float) (meshI + 1 - offsetX) / (effectiveMeshWidth - 1);
+        float v1 = (float) (meshJ - offsetZ) / (effectiveMeshHeight - 1);
+        float u2 = (float) (meshI + 1 - offsetX) / (effectiveMeshWidth - 1);
+        float v2 = (float) (meshJ + 1 - offsetZ) / (effectiveMeshHeight - 1);
+        float u3 = (float) (meshI - offsetX) / (effectiveMeshWidth - 1);
+        float v3 = (float) (meshJ + 1 - offsetZ) / (effectiveMeshHeight - 1);
+
         // 使用默认法线，后续会统一计算
         float[] defaultNormal = {0.0f, 1.0f, 0.0f};
 
         // 第一个三角形：左下->右下->右上（逆时针）
-        addVertex(vertices, x0, y0, z0, defaultNormal);
-        addVertex(vertices, x1, y1, z1, defaultNormal);
-        addVertex(vertices, x2, y2, z2, defaultNormal);
+        addVertex(vertices, x0, y0, z0, defaultNormal, u0, v0);
+        addVertex(vertices, x1, y1, z1, defaultNormal, u1, v1);
+        addVertex(vertices, x2, y2, z2, defaultNormal, u2, v2);
 
         // 第二个三角形：左下->右上->左上（逆时针）
-        addVertex(vertices, x0, y0, z0, defaultNormal);
-        addVertex(vertices, x2, y2, z2, defaultNormal);
-        addVertex(vertices, x3, y3, z3, defaultNormal);
+        addVertex(vertices, x0, y0, z0, defaultNormal, u0, v0);
+        addVertex(vertices, x2, y2, z2, defaultNormal, u2, v2);
+        addVertex(vertices, x3, y3, z3, defaultNormal, u3, v3);
     }
 
     /**
-     * 确保两个三角形使用一致的顶点顺序（用于留白区域）
+     * 四边形添加方法（留白区域）
      */
     private static void addQuadFixed(List<Vertex> vertices, float[][] heightMap,
-                                     int srcI0, int srcJ0, int srcI1, int srcJ1,
-                                     int srcI2, int srcJ2, int srcI3, int srcJ3,
                                      int meshWidth, int meshHeight, int meshI, int meshJ,
-                                     boolean inEffectiveArea, float heightScale) {
+                                     int offsetX, int offsetZ, int effectiveMeshWidth,
+                                     int effectiveMeshHeight, float heightScale) {
 
-        // 计算四个顶点的世界坐标
+        // 计算四个顶点的世界坐标（留白区域高度为0）
         float x0 = (meshI / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
         float z0 = (meshJ / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y0 = inEffectiveArea ? heightMap[srcI0][srcJ0] * heightScale : 0.0f;
+        float y0 = 0.0f;
 
         float x1 = ((meshI + 1) / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
         float z1 = (meshJ / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y1 = inEffectiveArea ? heightMap[srcI1][srcJ1] * heightScale : 0.0f;
+        float y1 = 0.0f;
 
         float x2 = ((meshI + 1) / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
         float z2 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y2 = inEffectiveArea ? heightMap[srcI2][srcJ2] * heightScale : 0.0f;
+        float y2 = 0.0f;
 
         float x3 = (meshI / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
         float z3 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y3 = inEffectiveArea ? heightMap[srcI3][srcJ3] * heightScale : 0.0f;
+        float y3 = 0.0f;
+
+        // 留白区域的纹理坐标设为0（使用纹理左下角颜色）
+        float u = 0.0f, v = 0.0f;
 
         // 使用默认法线，后续会统一计算
         float[] defaultNormal = {0.0f, 1.0f, 0.0f};
 
         // 第一个三角形：左下->右下->右上（逆时针）
-        addVertex(vertices, x0, y0, z0, defaultNormal);
-        addVertex(vertices, x1, y1, z1, defaultNormal);
-        addVertex(vertices, x2, y2, z2, defaultNormal);
+        addVertex(vertices, x0, y0, z0, defaultNormal, u, v);
+        addVertex(vertices, x1, y1, z1, defaultNormal, u, v);
+        addVertex(vertices, x2, y2, z2, defaultNormal, u, v);
 
         // 第二个三角形：左下->右上->左上（逆时针）
-        addVertex(vertices, x0, y0, z0, defaultNormal);
-        addVertex(vertices, x2, y2, z2, defaultNormal);
-        addVertex(vertices, x3, y3, z3, defaultNormal);
+        addVertex(vertices, x0, y0, z0, defaultNormal, u, v);
+        addVertex(vertices, x2, y2, z2, defaultNormal, u, v);
+        addVertex(vertices, x3, y3, z3, defaultNormal, u, v);
     }
 
     /**
-     * 添加顶点（简化的纹理坐标计算 - 与mesh坐标保持一致）
+     * 添加顶点
      */
-    private static void addVertex(List<Vertex> vertices, float x, float y, float z, float[] normal) {
+    private static void addVertex(List<Vertex> vertices, float x, float y, float z, float[] normal, float u, float v) {
         float[] color = new float[]{1.0f, 1.0f, 1.0f};
 
-        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2]);
+        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2], u, v);
         vertex.nx = normal[0];
         vertex.ny = normal[1];
         vertex.nz = normal[2];
-
-        // 纹理坐标直接基于世界位置，与mesh坐标保持一致
-        vertex.u = (x / TERRAIN_SIZE) + 0.5f;
-        vertex.v = (z / TERRAIN_SIZE) + 0.5f;
 
         vertices.add(vertex);
     }
