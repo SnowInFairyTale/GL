@@ -95,7 +95,7 @@ public class RealTerrainData {
         }
 
         // 计算平滑法线
-        calculateSmoothNormals(vertexList);
+//        calculateSmoothNormals(vertexList);
 
         // 转换为FloatBuffer
         return createMeshData(vertexList, minHeight, maxHeight);

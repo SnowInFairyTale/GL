@@ -43,6 +43,9 @@
         <activity
             android:name=".GLV5Activity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".GLV7Activity"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

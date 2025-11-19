@@ -48,6 +48,10 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(MainActivity.this, GLV5Activity.class);
             startActivity(intent);
         });
+        findViewById(R.id.combine_v7_bt).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, GLV7Activity.class);
+            startActivity(intent);
+        });
 
         ImageView imageView = findViewById(R.id.iv_tiff_image_view);
         new Thread() {
@@ -90,9 +94,10 @@ public class MainActivity extends Activity {
                 dResult.width = width;
                 dResult.heightData = heightData;
 
-                RealTerrainData.MeshData meshData = RealTerrainData.generateTerrainMeshFromHeightData(dHeightData);
                 TIFFParseResultData.result = dResult;
-                TIFFParseResultData.meshData = meshData;
+                TIFFParseResultData.meshData = RealTerrainData.generateTerrainMeshFromHeightData(dHeightData);
+
+                TIFFParseResultData.meshData2 = RealTerrainData2.generateTerrainMeshFromHeightData(dHeightData);
 
                 String adpt2Path = FloatArrayExporter.exportToCacheFile(getApplication(), dHeightData, "adpt2.txt");
 
