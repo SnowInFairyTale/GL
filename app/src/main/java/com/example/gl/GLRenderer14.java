@@ -416,7 +416,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
 
         // 启用纹理
         if (useTextureHandle != -1) {
-            GLES30.glUniform1i(useTextureHandle, 0);
+            GLES30.glUniform1i(useTextureHandle, 1);
         }
 
         if (terrainTextureHandle != -1 && terrainTextureId != 0) {

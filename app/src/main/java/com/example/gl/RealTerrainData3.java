@@ -55,6 +55,117 @@ public class RealTerrainData3 {
         public float minHeight;
         public float maxHeight;
 
+
+        public void recalculateNormals() {
+            if (vertices == null || indices == null || vertexCount == 0 || indexCount == 0) {
+                Log.e(TAG, "无法计算法线：缺少顶点或索引数据");
+                return;
+            }
+
+            // 1. 准备数据数组
+            float[] vertexArray = new float[vertexCount * 3];
+            vertices.position(0);
+            vertices.get(vertexArray);
+
+            int[] indexArray = new int[indexCount];
+            indices.position(0);
+            indices.get(indexArray);
+
+            // 2. 法线累加数组
+            float[] normalArray = new float[vertexCount * 3];
+
+            // 3. 遍历三角形累加法线
+            for (int i = 0; i < indexCount; i += 3) {
+                int i0 = indexArray[i];
+                int i1 = indexArray[i + 1];
+                int i2 = indexArray[i + 2];
+
+                // 获取顶点
+                float x0 = vertexArray[i0 * 3];
+                float y0 = vertexArray[i0 * 3 + 1];
+                float z0 = vertexArray[i0 * 3 + 2];
+
+                float x1 = vertexArray[i1 * 3];
+                float y1 = vertexArray[i1 * 3 + 1];
+                float z1 = vertexArray[i1 * 3 + 2];
+
+                float x2 = vertexArray[i2 * 3];
+                float y2 = vertexArray[i2 * 3 + 1];
+                float z2 = vertexArray[i2 * 3 + 2];
+
+                // 计算三角形法线
+                float[] normal = calculateTriangleNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+
+                // 累加到顶点
+                normalArray[i0 * 3] += normal[0];
+                normalArray[i0 * 3 + 1] += normal[1];
+                normalArray[i0 * 3 + 2] += normal[2];
+
+                normalArray[i1 * 3] += normal[0];
+                normalArray[i1 * 3 + 1] += normal[1];
+                normalArray[i1 * 3 + 2] += normal[2];
+
+                normalArray[i2 * 3] += normal[0];
+                normalArray[i2 * 3 + 1] += normal[1];
+                normalArray[i2 * 3 + 2] += normal[2];
+            }
+
+            // 4. 归一化并更新缓冲区
+            normalizeAndUpdateBuffer(normalArray);
+        }
+
+        private float[] calculateTriangleNormal(float x0, float y0, float z0,
+                                                float x1, float y1, float z1,
+                                                float x2, float y2, float z2) {
+            float edge1x = x1 - x0;
+            float edge1y = y1 - y0;
+            float edge1z = z1 - z0;
+
+            float edge2x = x2 - x0;
+            float edge2y = y2 - y0;
+            float edge2z = z2 - z0;
+
+            // 叉积
+            float nx = edge1y * edge2z - edge1z * edge2y;
+            float ny = edge1z * edge2x - edge1x * edge2z;
+            float nz = edge1x * edge2y - edge1y * edge2x;
+
+            // 归一化
+            float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (length > 0) {
+                return new float[]{nx / length, ny / length, nz / length};
+            }
+            return new float[]{0.0f, 1.0f, 0.0f}; // 默认向上
+        }
+
+        private void normalizeAndUpdateBuffer(float[] normalArray) {
+            // 归一化每个顶点的法线
+            for (int i = 0; i < vertexCount; i++) {
+                float nx = normalArray[i * 3];
+                float ny = normalArray[i * 3 + 1];
+                float nz = normalArray[i * 3 + 2];
+
+                float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+                if (length > 0) {
+                    normalArray[i * 3] = nx / length;
+                    normalArray[i * 3 + 1] = ny / length;
+                    normalArray[i * 3 + 2] = nz / length;
+                } else {
+                    // 零长度法线，使用默认向上
+                    normalArray[i * 3] = 0.0f;
+                    normalArray[i * 3 + 1] = 1.0f;
+                    normalArray[i * 3 + 2] = 0.0f;
+                }
+            }
+
+            // 更新缓冲区
+            normals = ByteBuffer.allocateDirect(normalArray.length * 4)
+                    .order(ByteOrder.nativeOrder())
+                    .asFloatBuffer();
+            normals.put(normalArray);
+            normals.position(0);
+        }
+
         // 生成线框索引的方法
         public void generateLineIndices() {
             if (indices == null || indexCount == 0) {
