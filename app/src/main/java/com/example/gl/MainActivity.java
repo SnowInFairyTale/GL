@@ -104,7 +104,17 @@ public class MainActivity extends Activity {
 
                 TIFFParseResultData.meshData2 = RealTerrainData2.generateTerrainMeshFromHeightData(dHeightData);
                 TIFFParseResultData.meshData3 = RealTerrainData3.generateTerrainMeshFromHeightData(dHeightData);
+                // 在调用 recalculateNormals() 前后添加调试信息
+                Log.d("DEBUG", "调用 recalculateNormals() 前:");
+                Log.d("DEBUG", "vertexCount: " + TIFFParseResultData.meshData3.vertexCount);
+                Log.d("DEBUG", "indexCount: " + TIFFParseResultData.meshData3.indexCount);
+                Log.d("DEBUG", "vertices.capacity: " + TIFFParseResultData.meshData3.vertices.capacity());
+                Log.d("DEBUG", "normals.capacity: " + TIFFParseResultData.meshData3.normals.capacity());
+
                 TIFFParseResultData.meshData3.recalculateNormals();
+
+                Log.d("DEBUG", "调用 recalculateNormals() 后:");
+                Log.d("DEBUG", "normals.capacity: " + TIFFParseResultData.meshData3.normals.capacity());
 
                 String adpt2Path = FloatArrayExporter.exportToCacheFile(getApplication(), dHeightData, "adpt2.txt");
 
