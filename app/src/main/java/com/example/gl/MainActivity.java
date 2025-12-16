@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
                 TIFFParseResultData.meshData = RealTerrainData.generateTerrainMeshFromHeightData(floats);
 
                 TIFFParseResultData.meshData2 = RealTerrainData2.generateTerrainMeshFromHeightData(dHeightData);
+                TIFFParseResultData.meshData3 = RealTerrainData3.generateTerrainMeshFromHeightData(dHeightData);
 
                 String adpt2Path = FloatArrayExporter.exportToCacheFile(getApplication(), dHeightData, "adpt2.txt");
 
