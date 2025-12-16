@@ -30,7 +30,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     private int useTextureHandle;
     private int terrainTextureId;
 
-    private final RealTerrainData2.MeshData meshData;
+    private final RealTerrainData3.MeshData meshData;
 
     private final float[] modelMatrix = new float[16];
     private final float[] viewMatrix = new float[16];
@@ -73,7 +73,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
 
     public GLRenderer14(Context context) {
         this.context = context;
-        meshData = TIFFParseResultData.meshData2;
+        meshData = TIFFParseResultData.meshData3;
         Log.e("TIFFParseResult", "meshData " + meshData.minHeight + "," + meshData.maxHeight);
 
         // 初始化位置在地形中心上方
@@ -441,11 +441,16 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
             GLES30.glVertexAttribPointer(texCoordHandle, 2, GLES30.GL_FLOAT, false, 8, meshData.texCoords);
         }
 
-//        int terrainSizeHandle = GLES32.glGetUniformLocation(program, "uTerrainSize");
-
-//        GLES32.glUniform1f(terrainSizeHandle, RealTerrainData.TERRAIN_SIZE);
-
-        GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, meshData.vertexCount);
+        // 关键修改：使用索引绘制而不是顶点数组绘制
+        if (meshData.indices != null && meshData.indexCount > 0) {
+            GLES30.glDrawElements(GLES30.GL_TRIANGLES,
+                    meshData.indexCount,
+                    GLES30.GL_UNSIGNED_INT,
+                    meshData.indices);
+        } else {
+            // 如果没有索引，回退到原来的方式
+            GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, meshData.vertexCount);
+        }
 
         // 禁用顶点数组
         GLES30.glDisableVertexAttribArray(positionHandle);
@@ -464,19 +469,27 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
         int wireframePositionHandle = GLES30.glGetAttribLocation(wireframeProgram, "aPosition");
 
         GLES30.glUniformMatrix4fv(wireframeMvpMatrixHandle, 1, false, mvpMatrix, 0);
-        GLES30.glUniform3f(wireframeColorHandle, 0.0f, 1.0f, 0.0f);
 
+        // 启用顶点属性
         GLES30.glEnableVertexAttribArray(wireframePositionHandle);
         GLES30.glVertexAttribPointer(wireframePositionHandle, 3, GLES30.GL_FLOAT, false, 12, meshData.vertices);
 
+        // 绘制顶点（红色）
         GLES30.glUniform3f(wireframeColorHandle, 1.0f, 0.0f, 0.0f);
         GLES30.glDrawArrays(GLES30.GL_POINTS, 0, meshData.vertexCount);
 
+        // 绘制线框（绿色）
         GLES30.glUniform3f(wireframeColorHandle, 0.0f, 1.0f, 0.0f);
         GLES30.glLineWidth(2.0f);
 
-        for (int i = 0; i < meshData.vertexCount; i += 3) {
-            GLES30.glDrawArrays(GLES30.GL_LINE_LOOP, i, 3);
+        // 使用索引缓冲一次性绘制所有线框
+        if (meshData.lineIndices != null && meshData.lineIndexCount > 0) {
+            // 创建线框专用索引（每个三角形的三条边）
+            // 0-1, 1-2, 2-0, 3-4, 4-5, 5-3, ...
+            GLES30.glDrawElements(GLES30.GL_LINES,
+                    meshData.lineIndexCount,
+                    GLES30.GL_UNSIGNED_INT,
+                    meshData.lineIndices);
         }
 
         GLES30.glDisableVertexAttribArray(wireframePositionHandle);

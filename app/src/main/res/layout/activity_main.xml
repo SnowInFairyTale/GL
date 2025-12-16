@@ -71,5 +71,12 @@
         android:layout_marginTop="5dp"
         android:text="CombineV7" />
 
+    <Button
+        android:id="@+id/combine_v9_bt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="CombineV9" />
+
 
 </LinearLayout>

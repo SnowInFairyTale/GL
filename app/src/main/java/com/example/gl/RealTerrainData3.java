@@ -142,15 +142,8 @@ public class RealTerrainData3 {
     }
 
     /**
-     * 将网格坐标映射到源数据坐标（返回浮点数用于插值）
-     */
-    private static float mapToSourceCoordFloat(int meshCoord, int meshSize, int srcSize) {
-        return ((float) meshCoord / (meshSize - 1)) * (srcSize - 1);
-    }
-
-    /**
      * 从真实的32位浮点数据生成地形网格
-     * heightData 357 × 203像素，转换为500 × 500网格，保持比例不变形，使用双线性插值
+     * 修改：使用共享顶点网格
      */
     public static MeshData generateTerrainMeshFromHeightData(float[][] heightData) {
         if (heightData == null || heightData.length == 0) {
@@ -166,10 +159,7 @@ public class RealTerrainData3 {
         Log.i(TAG, String.format("Generating terrain from real data: %dx%d -> %dx%d with interpolation",
                 srcWidth, srcHeight, meshWidth, meshHeight));
 
-        List<Vertex> vertexList = new ArrayList<>();
-        List<Integer> indexList = new ArrayList<>();  // 新增：存储索引
-
-        // 计算真实的高度范围（仅从有效数据区域）
+        // 计算真实的高度范围
         float minHeight = Float.MAX_VALUE;
         float maxHeight = Float.MIN_VALUE;
         for (int i = 0; i < srcWidth; i++) {
@@ -183,22 +173,20 @@ public class RealTerrainData3 {
         Log.i(TAG, String.format("Real height range: %.3f to %.3f", minHeight, maxHeight));
 
         // 计算源数据的宽高比和目标网格的宽高比
-        float srcAspect = (float) srcWidth / srcHeight;  // 357/203 ≈ 1.758
-        float meshAspect = (float) meshWidth / meshHeight; // 500/500 = 1.0
+        float srcAspect = (float) srcWidth / srcHeight;
+        float meshAspect = (float) meshWidth / meshHeight;
 
-        // 计算在目标网格中的有效区域（保持原始比例）
+        // 计算在目标网格中的有效区域
         int effectiveMeshWidth, effectiveMeshHeight;
         int offsetX = 0, offsetZ = 0;
-        boolean isWidthFilled; // 标记哪个方向填满
+        boolean isWidthFilled;
 
         if (srcAspect > meshAspect) {
-            // 源数据更宽，在宽度方向填满，高度方向留白
             effectiveMeshWidth = meshWidth;
             effectiveMeshHeight = (int) (meshWidth / srcAspect);
             offsetZ = (meshHeight - effectiveMeshHeight) / 2;
             isWidthFilled = true;
         } else {
-            // 源数据更高，在高度方向填满，宽度方向留白
             effectiveMeshHeight = meshHeight;
             effectiveMeshWidth = (int) (meshHeight * srcAspect);
             offsetX = (meshWidth - effectiveMeshWidth) / 2;
@@ -209,40 +197,77 @@ public class RealTerrainData3 {
                 effectiveMeshWidth, effectiveMeshHeight, offsetX, offsetZ, isWidthFilled));
 
         // 计算高度缩放比例
-        float heightScale;
-        if (isWidthFilled) {
-            // 宽度方向填满：使用宽度方向的缩放比例
-            heightScale = (float) effectiveMeshWidth / srcWidth;
-        } else {
-            // 高度方向填满：使用高度方向的缩放比例
-            heightScale = (float) effectiveMeshHeight / srcHeight;
-        }
+        float heightScale = isWidthFilled ?
+                (float) effectiveMeshWidth / srcWidth :
+                (float) effectiveMeshHeight / srcHeight;
 
         Log.i(TAG, String.format("Height scale: %.3f", heightScale));
 
-        // 生成网格顶点 - 使用插值和高度缩放
-        for (int i = 0; i < meshWidth - 1; i++) {
-            for (int j = 0; j < meshHeight - 1; j++) {
-                // 检查当前网格点是否在有效区域内
-                boolean inEffectiveArea = (i >= offsetX && i < offsetX + effectiveMeshWidth - 1 &&
-                        j >= offsetZ && j < offsetZ + effectiveMeshHeight - 1);
+        // ================== 关键修改：创建共享顶点网格 ==================
+        // 创建顶点网格数组
+        Vertex[][] vertexGrid = new Vertex[meshWidth][meshHeight];
+        List<Vertex> vertexList = new ArrayList<>();
+        List<Integer> indexList = new ArrayList<>();
+
+        // 第一步：创建所有顶点
+        for (int i = 0; i < meshWidth; i++) {
+            for (int j = 0; j < meshHeight; j++) {
+                // 检查是否在有效区域内
+                boolean inEffectiveArea = (i >= offsetX && i < offsetX + effectiveMeshWidth &&
+                        j >= offsetZ && j < offsetZ + effectiveMeshHeight);
+
+                float x = (i / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
+                float z = (j / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
+                float y;
+                float u, v;
 
                 if (inEffectiveArea) {
-                    // 在有效区域内，使用浮点坐标进行双线性插值
-                    addQuadWithInterpolation(vertexList, indexList, heightData,
-                            meshWidth, meshHeight, i, j, offsetX, offsetZ,
-                            effectiveMeshWidth, effectiveMeshHeight, srcWidth, srcHeight, heightScale);
+                    // 在有效区域内
+                    float srcX = ((float)(i - offsetX) / (effectiveMeshWidth - 1)) * (srcWidth - 1);
+                    float srcY = ((float)(j - offsetZ) / (effectiveMeshHeight - 1)) * (srcHeight - 1);
+                    y = bilinearInterpolate(heightData, srcX, srcY, heightScale);
+                    u = (float) (i - offsetX) / (effectiveMeshWidth - 1);
+                    v = (float) (j - offsetZ) / (effectiveMeshHeight - 1);
                 } else {
-                    // 在留白区域，高度为0
-                    addQuadFixed(vertexList, indexList, heightData,
-                            meshWidth, meshHeight, i, j, offsetX, offsetZ,
-                            effectiveMeshWidth, effectiveMeshHeight, heightScale);
+                    // 在留白区域
+                    y = 0.0f;
+                    u = 0.0f;
+                    v = 0.0f;
                 }
+
+                // 创建顶点
+                float[] color = {1.0f, 1.0f, 1.0f};
+                float[] normal = {0.0f, 1.0f, 0.0f};
+                Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2], u, v);
+                vertex.nx = normal[0];
+                vertex.ny = normal[1];
+                vertex.nz = normal[2];
+
+                vertexGrid[i][j] = vertex;
+                vertexList.add(vertex);
             }
         }
 
-        // 计算法线
-        // calculateNormals(vertexList);
+        // 第二步：创建三角形索引（共享顶点）
+        for (int i = 0; i < meshWidth - 1; i++) {
+            for (int j = 0; j < meshHeight - 1; j++) {
+                // 计算四个顶点的索引
+                int v00 = i * meshHeight + j;           // 当前行当前列
+                int v10 = (i + 1) * meshHeight + j;     // 下一行当前列
+                int v11 = (i + 1) * meshHeight + (j + 1); // 下一行下一列
+                int v01 = i * meshHeight + (j + 1);     // 当前行下一列
+
+                // 第一个三角形：v00 -> v10 -> v11
+                indexList.add(v00);
+                indexList.add(v10);
+                indexList.add(v11);
+
+                // 第二个三角形：v00 -> v11 -> v01
+                indexList.add(v00);
+                indexList.add(v11);
+                indexList.add(v01);
+            }
+        }
 
         // 重新计算缩放后的高度范围
         float scaledMinHeight = minHeight * heightScale;
@@ -254,145 +279,7 @@ public class RealTerrainData3 {
     }
 
     /**
-     * 使用双线性插值的四边形添加方法（有效区域）- 增加索引参数
-     */
-    private static void addQuadWithInterpolation(List<Vertex> vertices, List<Integer> indices,
-                                                 float[][] heightMap,
-                                                 int meshWidth, int meshHeight, int meshI, int meshJ,
-                                                 int offsetX, int offsetZ, int effectiveMeshWidth,
-                                                 int effectiveMeshHeight, int srcWidth, int srcHeight,
-                                                 float heightScale) {
-
-        // 计算四个顶点在源数据中的浮点坐标
-        float srcX0 = mapToSourceCoordFloat(meshI - offsetX, effectiveMeshWidth, srcWidth);
-        float srcY0 = mapToSourceCoordFloat(meshJ - offsetZ, effectiveMeshHeight, srcHeight);
-        float srcX1 = mapToSourceCoordFloat(meshI + 1 - offsetX, effectiveMeshWidth, srcWidth);
-        float srcY1 = mapToSourceCoordFloat(meshJ - offsetZ, effectiveMeshHeight, srcHeight);
-        float srcX2 = mapToSourceCoordFloat(meshI + 1 - offsetX, effectiveMeshWidth, srcWidth);
-        float srcY2 = mapToSourceCoordFloat(meshJ + 1 - offsetZ, effectiveMeshHeight, srcHeight);
-        float srcX3 = mapToSourceCoordFloat(meshI - offsetX, effectiveMeshWidth, srcWidth);
-        float srcY3 = mapToSourceCoordFloat(meshJ + 1 - offsetZ, effectiveMeshHeight, srcHeight);
-
-        // 计算四个顶点的世界坐标
-        float x0 = (meshI / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z0 = (meshJ / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y0 = bilinearInterpolate(heightMap, srcX0, srcY0, heightScale);
-
-        float x1 = ((meshI + 1) / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z1 = (meshJ / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y1 = bilinearInterpolate(heightMap, srcX1, srcY1, heightScale);
-
-        float x2 = ((meshI + 1) / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z2 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y2 = bilinearInterpolate(heightMap, srcX2, srcY2, heightScale);
-
-        float x3 = (meshI / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z3 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y3 = bilinearInterpolate(heightMap, srcX3, srcY3, heightScale);
-
-        // 计算纹理坐标 - 在有效区域内映射到[0,1]
-        float u0 = (float) (meshI - offsetX) / (effectiveMeshWidth - 1);
-        float v0 = (float) (meshJ - offsetZ) / (effectiveMeshHeight - 1);
-        float u1 = (float) (meshI + 1 - offsetX) / (effectiveMeshWidth - 1);
-        float v1 = (float) (meshJ - offsetZ) / (effectiveMeshHeight - 1);
-        float u2 = (float) (meshI + 1 - offsetX) / (effectiveMeshWidth - 1);
-        float v2 = (float) (meshJ + 1 - offsetZ) / (effectiveMeshWidth - 1);
-        float u3 = (float) (meshI - offsetX) / (effectiveMeshWidth - 1);
-        float v3 = (float) (meshJ + 1 - offsetZ) / (effectiveMeshHeight - 1);
-
-        // 使用默认法线，后续会统一计算
-        float[] defaultNormal = {0.0f, 1.0f, 0.0f};
-
-        // 获取当前顶点的起始索引
-        int baseIndex = vertices.size();
-
-        // 添加四个顶点
-        addVertex(vertices, x0, y0, z0, defaultNormal, u0, v0);
-        addVertex(vertices, x1, y1, z1, defaultNormal, u1, v1);
-        addVertex(vertices, x2, y2, z2, defaultNormal, u2, v2);
-        addVertex(vertices, x3, y3, z3, defaultNormal, u3, v3);
-
-        // 添加两个三角形的索引（逆时针顺序）
-        // 第一个三角形：左下->右下->右上
-        indices.add(baseIndex);
-        indices.add(baseIndex + 1);
-        indices.add(baseIndex + 2);
-
-        // 第二个三角形：左下->右上->左上
-        indices.add(baseIndex);
-        indices.add(baseIndex + 2);
-        indices.add(baseIndex + 3);
-    }
-
-    /**
-     * 四边形添加方法（留白区域）- 增加索引参数
-     */
-    private static void addQuadFixed(List<Vertex> vertices, List<Integer> indices,
-                                     float[][] heightMap,
-                                     int meshWidth, int meshHeight, int meshI, int meshJ,
-                                     int offsetX, int offsetZ, int effectiveMeshWidth,
-                                     int effectiveMeshHeight, float heightScale) {
-
-        // 计算四个顶点的世界坐标（留白区域高度为0）
-        float x0 = (meshI / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z0 = (meshJ / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y0 = 0.0f;
-
-        float x1 = ((meshI + 1) / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z1 = (meshJ / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y1 = 0.0f;
-
-        float x2 = ((meshI + 1) / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z2 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y2 = 0.0f;
-
-        float x3 = (meshI / (float) (meshWidth - 1) - 0.5f) * TERRAIN_SIZE;
-        float z3 = ((meshJ + 1) / (float) (meshHeight - 1) - 0.5f) * TERRAIN_SIZE;
-        float y3 = 0.0f;
-
-        // 留白区域的纹理坐标设为0（使用纹理左下角颜色）
-        float u = 0.0f, v = 0.0f;
-
-        // 使用默认法线，后续会统一计算
-        float[] defaultNormal = {0.0f, 1.0f, 0.0f};
-
-        // 获取当前顶点的起始索引
-        int baseIndex = vertices.size();
-
-        // 添加四个顶点
-        addVertex(vertices, x0, y0, z0, defaultNormal, u, v);
-        addVertex(vertices, x1, y1, z1, defaultNormal, u, v);
-        addVertex(vertices, x2, y2, z2, defaultNormal, u, v);
-        addVertex(vertices, x3, y3, z3, defaultNormal, u, v);
-
-        // 添加两个三角形的索引（逆时针顺序）
-        // 第一个三角形：左下->右下->右上
-        indices.add(baseIndex);
-        indices.add(baseIndex + 1);
-        indices.add(baseIndex + 2);
-
-        // 第二个三角形：左下->右上->左上
-        indices.add(baseIndex);
-        indices.add(baseIndex + 2);
-        indices.add(baseIndex + 3);
-    }
-
-    /**
-     * 添加顶点
-     */
-    private static void addVertex(List<Vertex> vertices, float x, float y, float z, float[] normal, float u, float v) {
-        float[] color = new float[]{1.0f, 1.0f, 1.0f};
-
-        Vertex vertex = new Vertex(x, y, z, color[0], color[1], color[2], u, v);
-        vertex.nx = normal[0];
-        vertex.ny = normal[1];
-        vertex.nz = normal[2];
-
-        vertices.add(vertex);
-    }
-
-    /**
-     * 创建网格数据 - 增加索引参数
+     * 创建网格数据
      */
     private static MeshData createMeshData(List<Vertex> vertices, List<Integer> indices,
                                            float minHeight, float maxHeight) {

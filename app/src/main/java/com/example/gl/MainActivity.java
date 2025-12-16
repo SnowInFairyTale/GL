@@ -52,6 +52,10 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(MainActivity.this, GLV7Activity.class);
             startActivity(intent);
         });
+        findViewById(R.id.combine_v9_bt).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, GLV9Activity.class);
+            startActivity(intent);
+        });
 
         ImageView imageView = findViewById(R.id.iv_tiff_image_view);
         new Thread() {
