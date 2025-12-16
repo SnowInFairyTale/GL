@@ -7,9 +7,10 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class RealTerrainData2 {
+public class RealTerrainData3 {
     private static final String TAG = "RealTerrainData";
 
     // 地形配置
