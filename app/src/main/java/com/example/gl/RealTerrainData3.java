@@ -62,14 +62,28 @@ public class RealTerrainData3 {
                 return;
             }
 
+            // 确保顶点数据有足够的容量
+            if (vertices.capacity() < vertexCount * 3) {
+                Log.e(TAG, "顶点缓冲区容量不足");
+                return;
+            }
+
+            // 确保索引数据有足够的容量
+            if (indices.capacity() < indexCount) {
+                Log.e(TAG, "索引缓冲区容量不足");
+                return;
+            }
+
             // 1. 准备数据数组
-            float[] vertexArray = new float[vertexCount * 3];
             vertices.position(0);
+            float[] vertexArray = new float[vertexCount * 3];
             vertices.get(vertexArray);
 
-            int[] indexArray = new int[indexCount];
             indices.position(0);
+            int[] indexArray = new int[indexCount];
             indices.get(indexArray);
+
+            Log.d(TAG, "顶点数: " + vertexCount + ", 索引数: " + indexCount);
 
             // 2. 法线累加数组
             float[] normalArray = new float[vertexCount * 3];
@@ -79,6 +93,13 @@ public class RealTerrainData3 {
                 int i0 = indexArray[i];
                 int i1 = indexArray[i + 1];
                 int i2 = indexArray[i + 2];
+
+                // 检查索引是否有效
+                if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount) {
+                    Log.e(TAG, String.format("无效索引: i0=%d, i1=%d, i2=%d, vertexCount=%d",
+                            i0, i1, i2, vertexCount));
+                    continue;
+                }
 
                 // 获取顶点
                 float x0 = vertexArray[i0 * 3];
@@ -139,6 +160,13 @@ public class RealTerrainData3 {
         }
 
         private void normalizeAndUpdateBuffer(float[] normalArray) {
+            // 确保数组长度正确
+            if (normalArray.length != vertexCount * 3) {
+                Log.e(TAG, String.format("法线数组长度不正确: expected=%d, actual=%d",
+                        vertexCount * 3, normalArray.length));
+                return;
+            }
+
             // 归一化每个顶点的法线
             for (int i = 0; i < vertexCount; i++) {
                 float nx = normalArray[i * 3];
@@ -158,12 +186,14 @@ public class RealTerrainData3 {
                 }
             }
 
-            // 更新缓冲区
-            normals = ByteBuffer.allocateDirect(normalArray.length * 4)
-                    .order(ByteOrder.nativeOrder())
-                    .asFloatBuffer();
+            // 更新缓冲区 - 确保创建正确大小的缓冲区
+            ByteBuffer bb = ByteBuffer.allocateDirect(vertexCount * 3 * 4);
+            bb.order(ByteOrder.nativeOrder());
+            normals = bb.asFloatBuffer();
             normals.put(normalArray);
             normals.position(0);
+
+            Log.d(TAG, "法线缓冲区更新完成，容量: " + normals.capacity());
         }
 
         // 生成线框索引的方法
