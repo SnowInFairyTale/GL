@@ -95,7 +95,8 @@ public class MainActivity extends Activity {
                 dResult.heightData = heightData;
 
                 TIFFParseResultData.result = dResult;
-                TIFFParseResultData.meshData = RealTerrainData.generateTerrainMeshFromHeightData(dHeightData);
+                float[][] floats = HeightDataConverterSimple.convertToSquare(dHeightData);
+                TIFFParseResultData.meshData = RealTerrainData.generateTerrainMeshFromHeightData(floats);
 
                 TIFFParseResultData.meshData2 = RealTerrainData2.generateTerrainMeshFromHeightData(dHeightData);
 
