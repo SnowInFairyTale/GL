@@ -28,6 +28,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     private int texCoordHandle;
     private int terrainTextureHandle;
     private int useTextureHandle;
+    private int useTextureData = 0;
     private int terrainTextureId;
 
     private final RealTerrainData3.MeshData meshData;
@@ -63,6 +64,10 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     private boolean moveRight = false;
     private boolean moveUp = false;
     private boolean moveDown = false;
+
+    public void swTexture(boolean b) {
+        useTextureData = b ? 1 : 0;
+    }
 
     public enum RenderMode {
         SOLID,
@@ -416,7 +421,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
 
         // 启用纹理
         if (useTextureHandle != -1) {
-            GLES30.glUniform1i(useTextureHandle, 1);
+            GLES30.glUniform1i(useTextureHandle, useTextureData);
         }
 
         if (terrainTextureHandle != -1 && terrainTextureId != 0) {

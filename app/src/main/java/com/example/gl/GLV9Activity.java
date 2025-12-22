@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,10 +20,12 @@ public class GLV9Activity extends AppCompatActivity {
     private Button toggleViewBtn, toggleRenderBtn;
     private Button forwardBtn, backwardBtn, leftBtn, rightBtn, upBtn, downBtn;
 
+    private Switch swTexture;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_combine);
+        setContentView(R.layout.activity_combine3);
 
         setupUI();
         setupGLSurfaceView();
@@ -33,6 +36,7 @@ public class GLV9Activity extends AppCompatActivity {
         infoText = findViewById(R.id.infoText);
         toggleViewBtn = findViewById(R.id.toggleViewBtn);
         toggleRenderBtn = findViewById(R.id.toggleRenderBtn);
+        swTexture = findViewById(R.id.swTexture);
 
         forwardBtn = findViewById(R.id.forwardBtn);
         backwardBtn = findViewById(R.id.backwardBtn);
@@ -42,6 +46,10 @@ public class GLV9Activity extends AppCompatActivity {
         downBtn = findViewById(R.id.downBtn);
 
         movementControls = findViewById(R.id.movementControls);
+
+        swTexture.setOnCheckedChangeListener((compoundButton, b) -> {
+            glRenderer.swTexture(b);
+        });
 
         setupButtonListeners();
     }
