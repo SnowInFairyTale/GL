@@ -65,6 +65,13 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     private boolean moveUp = false;
     private boolean moveDown = false;
 
+    // 相机控制变量
+    private float cameraDistance = 80.0f;  // 相机距离
+    private float minCameraDistance = 20.0f;  // 最小距离
+    private float maxCameraDistance = 200.0f; // 最大距离
+    private float initialFingerDistance = 0.0f;
+    private boolean isZooming = false;
+
     public void swTexture(boolean b) {
         useTextureData = b ? 1 : 0;
     }
@@ -137,7 +144,10 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     }
 
     private void handleGodViewTouch(MotionEvent event) {
-        switch (event.getAction()) {
+        int action = event.getActionMasked();
+        int pointerCount = event.getPointerCount();
+
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
                 previousX = event.getX();
                 previousY = event.getY();
@@ -145,21 +155,67 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
                 isAutoRotating = false; // 手动控制时停止自动旋转
                 break;
 
-            case MotionEvent.ACTION_MOVE:
-                if (isRotating) {
-                    float deltaX = event.getX() - previousX;
-                    float deltaY = event.getY() - previousY;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                // 第二根手指按下，开始缩放
+                if (pointerCount == 2) {
+                    initialFingerDistance = getFingerDistance(event);
+                    isZooming = true;
+                    isRotating = false;
+                }
+                break;
 
+            case MotionEvent.ACTION_MOVE:
+                if (isRotating && pointerCount == 1) {
+                    float deltaX = event.getX() - previousX;
                     angle += deltaX * 0.5f;
                     previousX = event.getX();
                     previousY = event.getY();
+                } else if (isZooming && pointerCount == 2) {
+                    // 双指缩放
+                    float currentFingerDistance = getFingerDistance(event);
+
+                    if (initialFingerDistance > 0) {
+                        float zoomFactor = currentFingerDistance / initialFingerDistance;
+
+                        // 应用缩放
+                        cameraDistance /= zoomFactor;
+                        // 限制缩放范围
+                        cameraDistance = Math.max(minCameraDistance,
+                                Math.min(maxCameraDistance, cameraDistance));
+
+                        initialFingerDistance = currentFingerDistance;
+                    }
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
                 isRotating = false;
+                isZooming = false;
+                initialFingerDistance = 0.0f;
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:
+                if (pointerCount == 2) {
+                    // 双指变单指，切换到旋转模式
+                    int remainingPointerIndex = (event.getActionIndex() == 0) ? 1 : 0;
+                    previousX = event.getX(remainingPointerIndex);
+                    previousY = event.getY(remainingPointerIndex);
+                    isZooming = false;
+                    isRotating = true;
+                }
                 break;
         }
+    }
+
+    // 添加这个辅助方法
+    private float getFingerDistance(MotionEvent event) {
+        if (event.getPointerCount() < 2) {
+            return 0.0f;
+        }
+
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
     }
 
     private void handleFirstPersonTouch(MotionEvent event) {
@@ -351,16 +407,34 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
         cameraPosition[2] = fpvPosition[2];
     }
 
+//    private void updateGodViewCamera() {
+//        if (isAutoRotating) {
+//            angle += 0.3f; // 自动旋转速度
+//        }
+//
+//        float radius = 80.0f;
+//        float camX = (float) (Math.sin(angle * 0.01f) * radius);
+//        float camZ = (float) (Math.cos(angle * 0.01f) * radius);
+//        cameraPosition[0] = camX;
+//        cameraPosition[1] = 40.0f;
+//        cameraPosition[2] = camZ;
+//
+//        Matrix.setLookAtM(viewMatrix, 0,
+//                cameraPosition[0], cameraPosition[1], cameraPosition[2],
+//                0, 5, 0,
+//                0, 1, 0
+//        );
+//    }
+
     private void updateGodViewCamera() {
         if (isAutoRotating) {
             angle += 0.3f; // 自动旋转速度
         }
 
-        float radius = 80.0f;
-        float camX = (float) (Math.sin(angle * 0.01f) * radius);
-        float camZ = (float) (Math.cos(angle * 0.01f) * radius);
+        float camX = (float) (Math.sin(angle * 0.01f) * cameraDistance);
+        float camZ = (float) (Math.cos(angle * 0.01f) * cameraDistance);
         cameraPosition[0] = camX;
-        cameraPosition[1] = 40.0f;
+        cameraPosition[1] = cameraDistance * 0.5f; // 高度随距离变化
         cameraPosition[2] = camZ;
 
         Matrix.setLookAtM(viewMatrix, 0,
