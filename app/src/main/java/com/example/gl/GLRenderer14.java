@@ -65,16 +65,6 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     private boolean moveUp = false;
     private boolean moveDown = false;
 
-    // 相机控制变量
-    private float cameraDistance = 80.0f;  // 相机距离中心点的距离
-    private float minCameraDistance = 20.0f;  // 最小缩放距离
-    private float maxCameraDistance = 200.0f; // 最大缩放距离
-    private float zoomSpeed = 0.5f;        // 缩放速度
-
-    // 双手指缩放相关
-    private float initialFingerDistance = 0.0f;
-    private boolean isZooming = false;
-
     public void swTexture(boolean b) {
         useTextureData = b ? 1 : 0;
     }
@@ -136,22 +126,8 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
     }
 
     // 触摸控制方法
-//    public void onTouchEvent(MotionEvent event) {
-//        if (!isFirstPersonView) {
-//            // 上帝视角的旋转控制
-//            handleGodViewTouch(event);
-//        } else {
-//            // 第一人称的视角控制
-//            handleFirstPersonTouch(event);
-//        }
-//    }
-
-    // 触摸控制方法
     public void onTouchEvent(MotionEvent event) {
-        if (!isFirstPersonView && currentMode == RenderMode.SOLID) {
-            // 上帝视角+实体模式下，处理双手指缩放
-            handleGodViewTouchWithZoom(event);
-        } else if (!isFirstPersonView) {
+        if (!isFirstPersonView) {
             // 上帝视角的旋转控制
             handleGodViewTouch(event);
         } else {
@@ -160,107 +136,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
         }
     }
 
-    // 上帝视角带缩放功能的触摸处理
-    private void handleGodViewTouchWithZoom(MotionEvent event) {
-        int pointerCount = event.getPointerCount();
-
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_POINTER_DOWN:
-                if (pointerCount == 1) {
-                    // 单指：旋转控制
-                    previousX = event.getX();
-                    previousY = event.getY();
-                    isRotating = true;
-                    isAutoRotating = false; // 手动控制时停止自动旋转
-                    isZooming = false;
-                } else if (pointerCount == 2) {
-                    // 双指：缩放控制
-                    initialFingerDistance = getFingerDistance(event);
-                    isZooming = true;
-                    isRotating = false;
-                    isAutoRotating = false;
-                }
-                break;
-
-            case MotionEvent.ACTION_MOVE:
-                if (isRotating && pointerCount == 1) {
-                    // 单指旋转
-                    float deltaX = event.getX() - previousX;
-                    angle += deltaX * 0.5f;
-                    previousX = event.getX();
-                    previousY = event.getY();
-                } else if (isZooming && pointerCount >= 2) {
-                    // 双指缩放
-                    float currentFingerDistance = getFingerDistance(event);
-
-                    if (initialFingerDistance > 0) {
-                        float zoomFactor = currentFingerDistance / initialFingerDistance;
-
-                        // 应用缩放到相机距离
-                        cameraDistance /= zoomFactor;
-
-                        // 限制缩放范围
-                        cameraDistance = Math.max(minCameraDistance,
-                                Math.min(maxCameraDistance, cameraDistance));
-
-                        initialFingerDistance = currentFingerDistance;
-                    }
-                }
-                break;
-
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_POINTER_UP:
-                if (pointerCount < 2) {
-                    isZooming = false;
-                    initialFingerDistance = 0.0f;
-                }
-                if (pointerCount == 0) {
-                    isRotating = false;
-                }
-                break;
-        }
-    }
-
-    // 计算两个手指之间的距离
-    private float getFingerDistance(MotionEvent event) {
-        if (event.getPointerCount() < 2) {
-            return 0.0f;
-        }
-
-        float x = event.getX(0) - event.getX(1);
-        float y = event.getY(0) - event.getY(1);
-        return (float) Math.sqrt(x * x + y * y);
-    }
-
-//    private void handleGodViewTouch(MotionEvent event) {
-//        switch (event.getAction()) {
-//            case MotionEvent.ACTION_DOWN:
-//                previousX = event.getX();
-//                previousY = event.getY();
-//                isRotating = true;
-//                isAutoRotating = false; // 手动控制时停止自动旋转
-//                break;
-//
-//            case MotionEvent.ACTION_MOVE:
-//                if (isRotating) {
-//                    float deltaX = event.getX() - previousX;
-//                    float deltaY = event.getY() - previousY;
-//
-//                    angle += deltaX * 0.5f;
-//                    previousX = event.getX();
-//                    previousY = event.getY();
-//                }
-//                break;
-//
-//            case MotionEvent.ACTION_UP:
-//                isRotating = false;
-//                break;
-//        }
-//    }
-
     private void handleGodViewTouch(MotionEvent event) {
-        // 只在非实体模式下使用原来的旋转控制
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 previousX = event.getX();
@@ -270,7 +146,7 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (isRotating && event.getPointerCount() == 1) {
+                if (isRotating) {
                     float deltaX = event.getX() - previousX;
                     float deltaY = event.getY() - previousY;
 
@@ -284,18 +160,6 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
                 isRotating = false;
                 break;
         }
-    }
-
-    // 重置相机到默认位置
-    public void resetCamera() {
-        cameraDistance = 80.0f;
-        angle = 0.0f;
-        isAutoRotating = false;
-    }
-
-    // 在 GodView 下获取当前相机距离（用于UI显示）
-    public float getCameraDistance() {
-        return cameraDistance;
     }
 
     private void handleFirstPersonTouch(MotionEvent event) {
@@ -487,42 +351,21 @@ public class GLRenderer14 implements GLSurfaceView.Renderer {
         cameraPosition[2] = fpvPosition[2];
     }
 
-//    private void updateGodViewCamera() {
-//        if (isAutoRotating) {
-//            angle += 0.3f; // 自动旋转速度
-//        }
-//
-//        float radius = 80.0f;
-//        float camX = (float) (Math.sin(angle * 0.01f) * radius);
-//        float camZ = (float) (Math.cos(angle * 0.01f) * radius);
-//        cameraPosition[0] = camX;
-//        cameraPosition[1] = 40.0f;
-//        cameraPosition[2] = camZ;
-//
-//        Matrix.setLookAtM(viewMatrix, 0,
-//                cameraPosition[0], cameraPosition[1], cameraPosition[2],
-//                0, 5, 0,
-//                0, 1, 0
-//        );
-//    }
-
     private void updateGodViewCamera() {
         if (isAutoRotating) {
             angle += 0.3f; // 自动旋转速度
         }
 
-        float camX = (float) (Math.sin(angle * 0.01f) * cameraDistance);
-        float camZ = (float) (Math.cos(angle * 0.01f) * cameraDistance);
+        float radius = 80.0f;
+        float camX = (float) (Math.sin(angle * 0.01f) * radius);
+        float camZ = (float) (Math.cos(angle * 0.01f) * radius);
         cameraPosition[0] = camX;
-        cameraPosition[1] = cameraDistance * 0.5f; // 高度随距离变化
+        cameraPosition[1] = 40.0f;
         cameraPosition[2] = camZ;
-
-        // 计算相机看向的中心点（可调整，这里保持看向地形中心上方）
-        float lookAtHeight = Math.max(0, (cameraDistance * 0.1f));
 
         Matrix.setLookAtM(viewMatrix, 0,
                 cameraPosition[0], cameraPosition[1], cameraPosition[2],
-                0, lookAtHeight, 0,  // 看向地形中心
+                0, 5, 0,
                 0, 1, 0
         );
     }
