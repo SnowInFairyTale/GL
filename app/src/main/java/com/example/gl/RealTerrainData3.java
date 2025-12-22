@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class RealTerrainData3 {
-    private static final String TAG = "RealTerrainData";
+    private static final String TAG = "RealTerrainData3";
 
     // 地形配置
     public static final float TERRAIN_SIZE = 100.0f;
@@ -62,77 +62,144 @@ public class RealTerrainData3 {
                 return;
             }
 
-            // 确保顶点数据有足够的容量
-            if (vertices.capacity() < vertexCount * 3) {
-                Log.e(TAG, "顶点缓冲区容量不足");
-                return;
-            }
+            Log.d(TAG, "=== 开始计算法线 ===");
 
-            // 确保索引数据有足够的容量
-            if (indices.capacity() < indexCount) {
-                Log.e(TAG, "索引缓冲区容量不足");
-                return;
-            }
+            try {
+                // 1. 准备数据数组 - 使用正确的缓冲区位置
+                vertices.position(0);
+                float[] vertexArray = new float[vertices.remaining()];
+                vertices.get(vertexArray);
+                vertices.position(0);
 
-            // 1. 准备数据数组
-            vertices.position(0);
-            float[] vertexArray = new float[vertexCount * 3];
-            vertices.get(vertexArray);
+                indices.position(0);
+                int[] indexArray = new int[indices.remaining()];
+                indices.get(indexArray);
+                indices.position(0);
 
-            indices.position(0);
-            int[] indexArray = new int[indexCount];
-            indices.get(indexArray);
+                Log.d(TAG, String.format("顶点数组长度: %d, 需要: %d",
+                        vertexArray.length, vertexCount * 3));
+                Log.d(TAG, String.format("索引数组长度: %d, 需要: %d",
+                        indexArray.length, indexCount));
 
-            Log.d(TAG, "顶点数: " + vertexCount + ", 索引数: " + indexCount);
-
-            // 2. 法线累加数组
-            float[] normalArray = new float[vertexCount * 3];
-
-            // 3. 遍历三角形累加法线
-            for (int i = 0; i < indexCount; i += 3) {
-                int i0 = indexArray[i];
-                int i1 = indexArray[i + 1];
-                int i2 = indexArray[i + 2];
-
-                // 检查索引是否有效
-                if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount) {
-                    Log.e(TAG, String.format("无效索引: i0=%d, i1=%d, i2=%d, vertexCount=%d",
-                            i0, i1, i2, vertexCount));
-                    continue;
+                // 2. 检查顶点数组长度是否足够
+                if (vertexArray.length < vertexCount * 3) {
+                    Log.e(TAG, String.format("顶点数组长度不足: 需要%d, 实际%d",
+                            vertexCount * 3, vertexArray.length));
+                    return;
                 }
 
-                // 获取顶点
-                float x0 = vertexArray[i0 * 3];
-                float y0 = vertexArray[i0 * 3 + 1];
-                float z0 = vertexArray[i0 * 3 + 2];
+                // 3. 检查索引的有效性
+                int invalidIndices = 0;
+                int maxIndex = 0;
+                for (int i = 0; i < Math.min(20, indexArray.length); i++) {
+                    maxIndex = Math.max(maxIndex, indexArray[i]);
+                    if (indexArray[i] >= vertexCount) {
+                        invalidIndices++;
+                        Log.w(TAG, String.format("索引[%d] = %d 超出范围 (vertexCount=%d)",
+                                i, indexArray[i], vertexCount));
+                    }
+                }
 
-                float x1 = vertexArray[i1 * 3];
-                float y1 = vertexArray[i1 * 3 + 1];
-                float z1 = vertexArray[i1 * 3 + 2];
+                // 检查全部索引
+                for (int i = 0; i < indexArray.length; i++) {
+                    maxIndex = Math.max(maxIndex, indexArray[i]);
+                    if (indexArray[i] >= vertexCount) {
+                        invalidIndices++;
+                    }
+                }
 
-                float x2 = vertexArray[i2 * 3];
-                float y2 = vertexArray[i2 * 3 + 1];
-                float z2 = vertexArray[i2 * 3 + 2];
+                Log.d(TAG, String.format("最大索引: %d, 顶点数: %d, 无效索引数: %d",
+                        maxIndex, vertexCount, invalidIndices));
 
-                // 计算三角形法线
-                float[] normal = calculateTriangleNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+                if (maxIndex >= vertexCount) {
+                    Log.e(TAG, String.format("错误: 最大索引 %d >= 顶点数 %d", maxIndex, vertexCount));
+                }
 
-                // 累加到顶点
-                normalArray[i0 * 3] += normal[0];
-                normalArray[i0 * 3 + 1] += normal[1];
-                normalArray[i0 * 3 + 2] += normal[2];
+                // 4. 法线累加数组
+                float[] normalArray = new float[vertexCount * 3];
 
-                normalArray[i1 * 3] += normal[0];
-                normalArray[i1 * 3 + 1] += normal[1];
-                normalArray[i1 * 3 + 2] += normal[2];
+                // 5. 遍历三角形累加法线
+                int triangleCount = 0;
+                int processedTriangles = 0;
+                for (int i = 0; i < indexArray.length; i += 3) {
+                    triangleCount++;
 
-                normalArray[i2 * 3] += normal[0];
-                normalArray[i2 * 3 + 1] += normal[1];
-                normalArray[i2 * 3 + 2] += normal[2];
+                    // 确保有足够的索引
+                    if (i + 2 >= indexArray.length) {
+                        Log.w(TAG, String.format("索引不足: i=%d, arrayLength=%d", i, indexArray.length));
+                        break;
+                    }
+
+                    int i0 = indexArray[i];
+                    int i1 = indexArray[i + 1];
+                    int i2 = indexArray[i + 2];
+
+                    // 检查索引是否有效
+                    if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount) {
+                        if (processedTriangles < 10) {
+                            Log.w(TAG, String.format("跳过无效三角形 %d: i0=%d, i1=%d, i2=%d",
+                                    triangleCount, i0, i1, i2));
+                        }
+                        continue;
+                    }
+
+                    // 获取顶点
+                    int base0 = i0 * 3;
+                    int base1 = i1 * 3;
+                    int base2 = i2 * 3;
+
+                    // 检查数组边界
+                    if (base0 + 2 >= vertexArray.length ||
+                            base1 + 2 >= vertexArray.length ||
+                            base2 + 2 >= vertexArray.length) {
+                        Log.w(TAG, String.format("数组越界: base0=%d, base1=%d, base2=%d",
+                                base0, base1, base2));
+                        continue;
+                    }
+
+                    float x0 = vertexArray[base0];
+                    float y0 = vertexArray[base0 + 1];
+                    float z0 = vertexArray[base0 + 2];
+
+                    float x1 = vertexArray[base1];
+                    float y1 = vertexArray[base1 + 1];
+                    float z1 = vertexArray[base1 + 2];
+
+                    float x2 = vertexArray[base2];
+                    float y2 = vertexArray[base2 + 1];
+                    float z2 = vertexArray[base2 + 2];
+
+                    // 计算三角形法线
+                    float[] normal = calculateTriangleNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+
+                    // 累加到顶点
+                    normalArray[base0] += normal[0];
+                    normalArray[base0 + 1] += normal[1];
+                    normalArray[base0 + 2] += normal[2];
+
+                    normalArray[base1] += normal[0];
+                    normalArray[base1 + 1] += normal[1];
+                    normalArray[base1 + 2] += normal[2];
+
+                    normalArray[base2] += normal[0];
+                    normalArray[base2 + 1] += normal[1];
+                    normalArray[base2 + 2] += normal[2];
+
+                    processedTriangles++;
+                }
+
+                Log.d(TAG, String.format("处理完成: 总三角形数=%d, 有效三角形数=%d",
+                        triangleCount, processedTriangles));
+
+                // 6. 归一化并更新缓冲区
+                normalizeAndUpdateBuffer(normalArray);
+
+            } catch (Exception e) {
+                Log.e(TAG, "计算法线时发生错误: " + e.getMessage(), e);
+                e.printStackTrace();
             }
 
-            // 4. 归一化并更新缓冲区
-            normalizeAndUpdateBuffer(normalArray);
+            Log.d(TAG, "=== 法线计算完成 ===");
         }
 
         private float[] calculateTriangleNormal(float x0, float y0, float z0,
