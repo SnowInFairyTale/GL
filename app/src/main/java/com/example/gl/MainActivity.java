@@ -2,7 +2,6 @@ package com.example.gl;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
@@ -61,11 +60,11 @@ public class MainActivity extends Activity {
         new Thread() {
             @Override
             public void run() {
-                Bitmap bitmap = TiffBitmapFactoryConverter.convert32BitTIFF(getApplication(), R.raw.adapt_20251114_102916);
-                runOnUiThread(() -> imageView.setImageBitmap(bitmap));
+//                Bitmap bitmap = TiffBitmapFactoryConverter.convert32BitTIFF(getApplication(), R.raw.adapt_20251114_102916);
+//                runOnUiThread(() -> imageView.setImageBitmap(bitmap));
 
                 ManualTIFFParser.TIFFParseResult result = ManualTIFFParser.parseTIFFToBitmap(getApplication(), R.raw.adapt_20251114_102916);
-                String adptPath = FloatArrayExporter.exportToCacheFile(getApplication(), result.heightData, "adpt.txt");
+//                String adptPath = FloatArrayExporter.exportToCacheFile(getApplication(), result.heightData, "adpt.txt");
                 float[][] heightData = result.heightData;
 
                 int width = heightData.length;
@@ -116,11 +115,11 @@ public class MainActivity extends Activity {
                 Log.d("SKDEBUG", "调用 recalculateNormals() 后:");
                 Log.d("SKDEBUG", "normals.capacity: " + TIFFParseResultData.meshData3.normals.capacity());
 
-                String adpt2Path = FloatArrayExporter.exportToCacheFile(getApplication(), dHeightData, "adpt2.txt");
+//                String adpt2Path = FloatArrayExporter.exportToCacheFile(getApplication(), dHeightData, "adpt2.txt");
 
                 runOnUiThread(() -> imageView.setImageBitmap(result.bitmap));
-                Log.e("TIFFParseResult", "result " + result + ",adptPath " + adptPath);
-                Log.e("TIFFParseResult", "dResult " + dResult + ",adpt2Path " + adpt2Path);
+//                Log.e("TIFFParseResult", "result " + result + ",adptPath " + adptPath);
+//                Log.e("TIFFParseResult", "dResult " + dResult + ",adpt2Path " + adpt2Path);
             }
         }.start();
     }
